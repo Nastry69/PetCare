@@ -41,8 +41,9 @@ petcare/
 ├── backend/
 ├── frontend/
 ├── docs/
-│   ├── Cahier_des_Charges_Fonctionnel.pdf
-│   ├── Methodologie_Projet.pdf
+│   ├── 1_Cahier des Charges Fonctionnel.pdf
+│   ├── 2_Methodologie et Conception UI & UX.pdf
+|   ├── 3_Modélisation de la Base de Données.pdf
 │
 └── README.md
 ```
