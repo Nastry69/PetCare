@@ -35,6 +35,7 @@ Versioning : Git / GitHub
 CI/CD : GitHub Actions (prévu)
 
 📂 Structure du projet
+```
 petcare/
 │
 ├── backend/
@@ -44,6 +45,7 @@ petcare/
 │   ├── Methodologie_Projet.pdf
 │
 └── README.md
+```
 
 ## État actuel du projet
 
