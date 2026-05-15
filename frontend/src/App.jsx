@@ -1,23 +1,55 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
-import Home from './pages/Home'
-import AnimalDetail from './pages/AnimalDetail'
 import Dashboard from './pages/Dashboard'
 import Animals from './pages/Animals'
+import AnimalDetail from './pages/AnimalDetail'
 import EventForm from './pages/EventForm'
+import Calendar from './pages/Calendar'
+import Settings from './pages/Settings'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import AuthCallback from './pages/AuthCallback'
 
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
+  return children
+}
+
+function PublicRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (user) return <Navigate to="/dashboard" replace />
+  return children
+}
 
 function App() {
   return (
-    <Layout>
-      <Routes>
-        {/* <Route path="/" element={<Home />} /> */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/animals" element={<Animals />} />
-        <Route path="/animals/:id" element={<AnimalDetail />} />
-        <Route path="/events/new" element={<EventForm />} />
-      </Routes>
-    </Layout>
+    <Routes>
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/auth/callback" element={<AuthCallback />} />
+
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
+      <Route path="/*" element={
+        <ProtectedRoute>
+          <Layout>
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/animals" element={<Animals />} />
+              <Route path="/animals/:id" element={<AnimalDetail />} />
+              <Route path="/events/new" element={<EventForm />} />
+              <Route path="/events/:id/edit" element={<EventForm />} />
+              <Route path="/calendar" element={<Calendar />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </Layout>
+        </ProtectedRoute>
+      } />
+    </Routes>
   )
 }
 

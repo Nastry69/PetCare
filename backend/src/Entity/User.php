@@ -6,10 +6,12 @@ use App\Repository\UserRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -31,8 +33,11 @@ class User
     #[ORM\Column]
     private ?\DateTimeImmutable $dateInscription = null;
 
-    #[ORM\Column(length: 50)]
-    private ?string $role = null;
+    #[ORM\Column(type: 'json')]
+    private array $roles = [];
+
+    #[ORM\Column(length: 500, nullable: true)]
+    private ?string $photoUrl = null;
 
     /**
      * @var Collection<int, Animal>
@@ -57,6 +62,7 @@ class User
         $this->animals = new ArrayCollection();
         $this->evenements = new ArrayCollection();
         $this->partageAnimals = new ArrayCollection();
+        $this->dateInscription = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -72,7 +78,6 @@ class User
     public function setNom(string $nom): static
     {
         $this->nom = $nom;
-
         return $this;
     }
 
@@ -84,7 +89,6 @@ class User
     public function setPrenom(string $prenom): static
     {
         $this->prenom = $prenom;
-
         return $this;
     }
 
@@ -96,7 +100,6 @@ class User
     public function setEmail(string $email): static
     {
         $this->email = $email;
-
         return $this;
     }
 
@@ -108,7 +111,6 @@ class User
     public function setPassword(string $password): static
     {
         $this->password = $password;
-
         return $this;
     }
 
@@ -120,19 +122,39 @@ class User
     public function setDateInscription(\DateTimeImmutable $dateInscription): static
     {
         $this->dateInscription = $dateInscription;
-
         return $this;
     }
 
-    public function getRole(): ?string
+    public function getRoles(): array
     {
-        return $this->role;
+        $roles = $this->roles;
+        $roles[] = 'ROLE_USER';
+        return array_unique($roles);
     }
 
-    public function setRole(string $role): static
+    public function setRoles(array $roles): static
     {
-        $this->role = $role;
+        $this->roles = $roles;
+        return $this;
+    }
 
+    public function getUserIdentifier(): string
+    {
+        return (string) $this->email;
+    }
+
+    public function eraseCredentials(): void
+    {
+    }
+
+    public function getPhotoUrl(): ?string
+    {
+        return $this->photoUrl;
+    }
+
+    public function setPhotoUrl(?string $photoUrl): static
+    {
+        $this->photoUrl = $photoUrl;
         return $this;
     }
 
@@ -150,19 +172,16 @@ class User
             $this->animals->add($animal);
             $animal->setProprietaire($this);
         }
-
         return $this;
     }
 
     public function removeAnimal(Animal $animal): static
     {
         if ($this->animals->removeElement($animal)) {
-            // set the owning side to null (unless already changed)
             if ($animal->getProprietaire() === $this) {
                 $animal->setProprietaire(null);
             }
         }
-
         return $this;
     }
 
@@ -180,19 +199,16 @@ class User
             $this->evenements->add($evenement);
             $evenement->setCreateur($this);
         }
-
         return $this;
     }
 
     public function removeEvenement(Evenement $evenement): static
     {
         if ($this->evenements->removeElement($evenement)) {
-            // set the owning side to null (unless already changed)
             if ($evenement->getCreateur() === $this) {
                 $evenement->setCreateur(null);
             }
         }
-
         return $this;
     }
 
@@ -210,19 +226,16 @@ class User
             $this->partageAnimals->add($partageAnimal);
             $partageAnimal->setUtilisateur($this);
         }
-
         return $this;
     }
 
     public function removePartageAnimal(PartageAnimal $partageAnimal): static
     {
         if ($this->partageAnimals->removeElement($partageAnimal)) {
-            // set the owning side to null (unless already changed)
             if ($partageAnimal->getUtilisateur() === $this) {
                 $partageAnimal->setUtilisateur(null);
             }
         }
-
         return $this;
     }
 }

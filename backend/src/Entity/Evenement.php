@@ -20,7 +20,7 @@ class Evenement
     #[ORM\Column(length: 50)]
     private ?string $statut = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?int $rappelJoursAvant = null;
 
     #[ORM\Column]
@@ -81,7 +81,7 @@ class Evenement
         return $this->rappelJoursAvant;
     }
 
-    public function setRappelJoursAvant(int $rappelJoursAvant): static
+    public function setRappelJoursAvant(?int $rappelJoursAvant): static
     {
         $this->rappelJoursAvant = $rappelJoursAvant;
 
@@ -105,7 +105,7 @@ class Evenement
         return $this->commentaire;
     }
 
-    public function setCommentaire(string $commentaire): static
+    public function setCommentaire(?string $commentaire): static
     {
         $this->commentaire = $commentaire;
 

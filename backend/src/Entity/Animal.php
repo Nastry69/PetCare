@@ -22,13 +22,13 @@ class Animal
     #[ORM\Column(length: 255)]
     private ?string $espece = null;
 
-    #[ORM\Column(length: 100)]
+    #[ORM\Column(length: 100, nullable: true)]
     private ?string $race = null;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTime $dateNaissance = null;
 
-    #[ORM\Column(length: 20)]
+    #[ORM\Column(length: 20, nullable: true)]
     private ?string $sexe = null;
 
     #[ORM\Column(length: 255, nullable: true)]
@@ -90,7 +90,7 @@ class Animal
         return $this->race;
     }
 
-    public function setRace(string $race): static
+    public function setRace(?string $race): static
     {
         $this->race = $race;
 
@@ -102,7 +102,7 @@ class Animal
         return $this->dateNaissance;
     }
 
-    public function setDateNaissance(\DateTime $dateNaissance): static
+    public function setDateNaissance(?\DateTime $dateNaissance): static
     {
         $this->dateNaissance = $dateNaissance;
 
@@ -114,7 +114,7 @@ class Animal
         return $this->sexe;
     }
 
-    public function setSexe(string $sexe): static
+    public function setSexe(?string $sexe): static
     {
         $this->sexe = $sexe;
 

@@ -1,10 +1,6 @@
-import { NavLink } from "react-router-dom";
-import {
-  LayoutDashboard,
-  PawPrint,
-  CalendarDays,
-  Settings
-} from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { LayoutDashboard, PawPrint, CalendarDays, Settings } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import logo from "../assets/Logo 1.png";
 
 const navItems = [
@@ -15,17 +11,21 @@ const navItems = [
 ];
 
 function Sidebar() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
+
   return (
     <aside className="hidden w-[182px] shrink-0 border-r border-[#E5EAF3] bg-white lg:flex lg:flex-col">
       <div className="flex items-center gap-3 px-4 py-4">
-        <img
-          src={logo}
-          alt="PetCare"
-          className="h-9 w-9 rounded-full object-cover"
-        />
+        <img src={logo} alt="PetCare" className="h-9 w-9 rounded-full object-cover" />
         <div>
           <p className="text-[14px] font-bold leading-none text-[#0F172A]">PetCare</p>
-          <p className="mt-1 text-[10px] text-[#64748B]">Gestionnaire d’animaux</p>
+          <p className="mt-1 text-[10px] text-[#64748B]">Gestionnaire d'animaux</p>
         </div>
       </div>
 
@@ -35,9 +35,8 @@ function Sidebar() {
             key={item.label}
             to={item.to}
             className={({ isActive }) =>
-              `flex items-center gap-3 rounded-[10px] px-4 py-3 text-[14px] font-medium transition ${isActive
-                ? "bg-[#EAF3FF] text-[#1377EC]"
-                : "text-[#475569] hover:bg-[#F8FAFC]"
+              `flex items-center gap-3 rounded-[10px] px-4 py-3 text-[14px] font-medium transition ${
+                isActive ? "bg-[#EAF3FF] text-[#1377EC]" : "text-[#475569] hover:bg-[#F8FAFC]"
               }`
             }
           >
@@ -48,7 +47,10 @@ function Sidebar() {
       </nav>
 
       <div className="mt-auto px-4 pb-6">
-        <button className="text-[12px] font-medium text-[#EF4444]">
+        <button
+          onClick={handleLogout}
+          className="text-[12px] font-medium text-[#EF4444] hover:text-[#DC2626]"
+        >
           Déconnexion
         </button>
       </div>

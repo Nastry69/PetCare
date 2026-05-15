@@ -2,7 +2,9 @@
 
 namespace App\Repository;
 
+use App\Entity\Animal;
 use App\Entity\PartageAnimal;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,28 +18,30 @@ class PartageAnimalRepository extends ServiceEntityRepository
         parent::__construct($registry, PartageAnimal::class);
     }
 
-//    /**
-//     * @return PartageAnimal[] Returns an array of PartageAnimal objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('p.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /** @return PartageAnimal[] */
+    public function findByUtilisateur(User $user): array
+    {
+        return $this->findBy(['utilisateur' => $user]);
+    }
 
-//    public function findOneBySomeField($value): ?PartageAnimal
-//    {
-//        return $this->createQueryBuilder('p')
-//            ->andWhere('p.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    /** @return PartageAnimal[] */
+    public function findByAnimal(Animal $animal): array
+    {
+        return $this->findBy(['animal' => $animal]);
+    }
+
+    public function findExistingPartage(Animal $animal, User $utilisateur): ?PartageAnimal
+    {
+        return $this->findOneBy(['animal' => $animal, 'utilisateur' => $utilisateur]);
+    }
+
+    public function canUserWriteAnimal(Animal $animal, User $user): bool
+    {
+        if ($animal->getProprietaire() === $user) {
+            return true;
+        }
+
+        $partage = $this->findOneBy(['animal' => $animal, 'utilisateur' => $user]);
+        return $partage !== null && $partage->getRolePartage() === 'ecriture';
+    }
 }
