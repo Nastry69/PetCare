@@ -3,6 +3,7 @@
 namespace App\Repository;
 
 use App\Entity\Animal;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,28 +17,35 @@ class AnimalRepository extends ServiceEntityRepository
         parent::__construct($registry, Animal::class);
     }
 
-//    /**
-//     * @return Animal[] Returns an array of Animal objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('a')
-//            ->andWhere('a.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('a.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /** @return Animal[] */
+    public function findByProprietaire(User $user): array
+    {
+        return $this->findBy(['proprietaire' => $user], ['id' => 'DESC']);
+    }
 
-//    public function findOneBySomeField($value): ?Animal
-//    {
-//        return $this->createQueryBuilder('a')
-//            ->andWhere('a.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    /** Returns animals owned by user OR shared with user */
+    public function findAccessibleByUser(User $user): array
+    {
+        return $this->createQueryBuilder('a')
+            ->leftJoin('a.partageAnimals', 'p')
+            ->where('a.proprietaire = :user')
+            ->orWhere('p.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->orderBy('a.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function isAccessibleByUser(Animal $animal, User $user): bool
+    {
+        if ($animal->getProprietaire() === $user) {
+            return true;
+        }
+
+        $partage = $this->getEntityManager()
+            ->getRepository(\App\Entity\PartageAnimal::class)
+            ->findOneBy(['animal' => $animal, 'utilisateur' => $user]);
+
+        return $partage !== null;
+    }
 }

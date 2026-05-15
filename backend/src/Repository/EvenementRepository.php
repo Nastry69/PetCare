@@ -2,7 +2,9 @@
 
 namespace App\Repository;
 
+use App\Entity\Animal;
 use App\Entity\Evenement;
+use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
@@ -16,28 +18,62 @@ class EvenementRepository extends ServiceEntityRepository
         parent::__construct($registry, Evenement::class);
     }
 
-//    /**
-//     * @return Evenement[] Returns an array of Evenement objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('e')
-//            ->andWhere('e.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('e.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /** @return Evenement[] */
+    public function findByAnimal(Animal $animal): array
+    {
+        return $this->findBy(['animal' => $animal], ['dateHeureEvenement' => 'DESC']);
+    }
 
-//    public function findOneBySomeField($value): ?Evenement
-//    {
-//        return $this->createQueryBuilder('e')
-//            ->andWhere('e.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    /** Events for animals accessible by this user (owned or shared) */
+    public function findAccessibleByUser(User $user): array
+    {
+        return $this->createQueryBuilder('e')
+            ->join('e.animal', 'a')
+            ->leftJoin('a.partageAnimals', 'p')
+            ->where('a.proprietaire = :user')
+            ->orWhere('p.utilisateur = :user')
+            ->setParameter('user', $user)
+            ->orderBy('e.dateHeureEvenement', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Upcoming events for a user (from today onwards) */
+    public function findUpcomingByUser(User $user): array
+    {
+        return $this->createQueryBuilder('e')
+            ->join('e.animal', 'a')
+            ->leftJoin('a.partageAnimals', 'p')
+            ->where('(a.proprietaire = :user OR p.utilisateur = :user)')
+            ->andWhere('e.dateHeureEvenement >= :now')
+            ->setParameter('user', $user)
+            ->setParameter('now', new \DateTime())
+            ->orderBy('e.dateHeureEvenement', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Events where rappelActif is true and reminder should be sent today (event is in rappelJoursAvant days) */
+    public function findRappelsDuJour(): array
+    {
+        $candidates = $this->createQueryBuilder('e')
+            ->where('e.rappelActif = true')
+            ->andWhere('e.statut != :annule')
+            ->andWhere('e.dateHeureEvenement >= :tomorrow')
+            ->setParameter('annule', 'annule')
+            ->setParameter('tomorrow', new \DateTime('tomorrow'))
+            ->getQuery()
+            ->getResult();
+
+        $today = new \DateTime('today');
+
+        return array_values(array_filter(
+            $candidates,
+            static function (Evenement $e) use ($today): bool {
+                $joursAvant = $e->getRappelJoursAvant() ?? 1;
+                $diff = (int) $today->diff($e->getDateHeureEvenement())->days;
+                return $diff === $joursAvant;
+            }
+        ));
+    }
 }

@@ -1,69 +1,113 @@
-### PetCare App
+# PetCare
 
-Application web de gestion et de suivi des animaux domestiques
+Application web de gestion et de suivi de la santé des animaux domestiques.
 
-## Présentation du projet
+Projet fil rouge — Formation Concepteur Développeur d'Applications (CDA Bac+3) — 2026
 
-PetCare App est une application web développée dans le cadre du projet fil rouge de la formation Concepteur Développeur d’Applications (CDA – Bac+3).
+---
 
-L’objectif de l’application est de permettre aux propriétaires d’animaux domestiques de centraliser, organiser et suivre les informations essentielles liées à leurs animaux (vaccinations, traitements, rendez-vous, rappels, partage d’accès).
+## Présentation
 
-## Objectifs
+PetCare permet aux propriétaires d'animaux de centraliser toutes les informations de santé de leurs compagnons : vaccins, rendez-vous vétérinaires, traitements, rappels automatiques et partage d'accès avec l'entourage. **Plus besoin de carnet de santé papier.**
 
-Centraliser les informations relatives aux animaux domestiques
-
-Mettre en place un système de rappels automatisés
-
-Permettre le partage sécurisé d’un animal entre plusieurs utilisateurs
-
-Respecter les exigences RGPD
-
-Appliquer les bonnes pratiques professionnelles (Git, Docker, CI/CD, tests)
+---
 
 ## Stack technique
 
-Backend : PHP 8+ – Symfony
+| Couche | Technologie |
+|---|---|
+| Backend | PHP 8.4 · Symfony 7.4 · API REST |
+| Authentification | JWT — LexikJWTAuthenticationBundle |
+| Frontend | React 19 · Vite · Tailwind CSS |
+| Base de données | MySQL / MariaDB · Doctrine ORM |
+| Versioning | Git · GitHub |
 
-Frontend : React (SPA)
+---
 
-Base de données : MySQL / PostgreSQL
+## Fonctionnalités (Jalon 5)
 
-Conteneurisation : Docker
+- **Authentification** — inscription, connexion JWT, gestion du profil
+- **Animaux** — CRUD complet avec fiche détaillée par animal
+- **Événements vétérinaires** — création, suivi par statut, calendrier mensuel
+- **Rappels automatiques** — notification J-N avant un rendez-vous
+- **Partage** — invitation par email, accès consultation ou gestion
+- **Notifications** — système en temps réel (partages, rappels)
+- **RGPD** — export JSON des données, suppression de compte
+- **Landing page** — page de présentation publique
 
-Versioning : Git / GitHub
+---
 
-CI/CD : GitHub Actions (prévu)
+## Structure du projet
 
-📂 Structure du projet
 ```
 petcare/
-│
-├── backend/
-├── frontend/
+├── backend/          # API Symfony
+├── frontend/         # SPA React
 ├── docs/
 │   ├── 1_Cahier des Charges Fonctionnel.pdf
 │   ├── 2_Methodologie et Conception UI & UX.pdf
-|   ├── 3_Modélisation de la Base de Données.pdf
-│
+│   └── 3_Modélisation de la Base de Données.pdf
 └── README.md
 ```
 
-## État actuel du projet
+---
 
-Le projet est actuellement en phase de conception (Jalon 2).
-Les maquettes UX/UI, la méthodologie projet et la structure Git sont en place.
-Le développement backend et frontend débutera aux jalons suivants.
+## Installation
 
-## Gestion des versions
+### Prérequis
 
-Le dépôt utilise une stratégie de branches :
+- PHP 8.4+ avec extensions `sodium`, `pdo_mysql`, `openssl`
+- Composer
+- Node.js 20+
+- MySQL / MariaDB
 
-main : versions stables et livrables validés
+### Backend
 
-develop : intégration des fonctionnalités en cours
+```bash
+cd backend
+composer install
+# Configurer backend/.env (copier depuis .env.example)
+php bin/console lexik:jwt:generate-keypair
+php bin/console doctrine:migrations:migrate
+php -S localhost:8000 -t public
+```
 
-branches temporaires : développements par fonctionnalité
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+L'application est accessible sur `http://localhost:5173`
+
+---
+
+## Rappels automatiques
+
+La commande suivante envoie les notifications de rappel (à planifier via cron) :
+
+```bash
+php bin/console app:send-reminders
+```
+
+Exemple cron — tous les jours à 8h :
+```
+0 8 * * * php /chemin/vers/backend/bin/console app:send-reminders
+```
+
+---
+
+## Gestion des branches
+
+| Branche | Rôle |
+|---|---|
+| `main` | Versions stables et livrables validés |
+| `develop` | Intégration des fonctionnalités en cours |
+
+---
 
 ## Auteur
 
-Projet réalisé dans le cadre de la formation 2026.
+Projet réalisé par Tristan dans le cadre de la formation CDA — IPSSI 2026.
