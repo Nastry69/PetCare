@@ -180,6 +180,32 @@ class SecurityController extends AbstractController
         ]);
     }
 
+    #[Route('/auth/reset-password', name: 'api_reset_password', methods: ['POST'])]
+    public function resetPassword(
+        Request $request,
+        UserRepository $userRepository,
+        UserPasswordHasherInterface $hasher,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+        $email = $data['email'] ?? '';
+        $newPassword = $data['newPassword'] ?? '';
+
+        if (strlen($newPassword) < 8) {
+            return $this->json(['message' => 'Le mot de passe doit contenir au moins 8 caractères.'], 400);
+        }
+
+        $user = $userRepository->findByEmail($email);
+        if (!$user) {
+            return $this->json(['message' => 'Aucun compte trouvé avec cet email.'], 404);
+        }
+
+        $user->setPassword($hasher->hashPassword($user, $newPassword));
+        $em->flush();
+
+        return $this->json(['message' => 'Mot de passe réinitialisé avec succès.']);
+    }
+
     #[Route('/auth/login_check', name: 'api_login_check', methods: ['POST'])]
     public function loginCheck(
         Request $request,

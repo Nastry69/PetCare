@@ -10,6 +10,8 @@ import Settings from './pages/Settings'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import AuthCallback from './pages/AuthCallback'
+import Home from './pages/Home'
+import ForgotPassword from './pages/ForgotPassword'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -30,9 +32,10 @@ function App() {
     <Routes>
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
 
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/" element={<Home />} />
 
       <Route path="/*" element={
         <ProtectedRoute>
