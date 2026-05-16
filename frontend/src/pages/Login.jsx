@@ -65,9 +65,7 @@ function Login() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-[13px] font-medium text-[#334155]">
-                Mot de passe
-              </label>
+              <label className="mb-1.5 block text-[13px] font-medium text-[#334155]">Mot de passe</label>
               <input
                 type="password"
                 required
@@ -85,6 +83,10 @@ function Login() {
             >
               {loading ? "Connexion…" : "Se connecter"}
             </button>
+
+            <Link to="/forgot-password" className="block text-center text-[12px] text-[#1377EC] hover:underline">
+              Mot de passe oublié ?
+            </Link>
           </form>
         </div>
 
