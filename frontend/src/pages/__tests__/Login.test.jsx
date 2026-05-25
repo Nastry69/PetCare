@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -99,6 +100,13 @@ describe('Login — soumission', () => {
     const loginFn = vi.fn().mockRejectedValue(new Error('Network Error'));
     renderLogin(loginFn);
 
+    // Les champs sont required : il faut les remplir pour que le formulaire se soumette
+    fireEvent.change(screen.getByPlaceholderText('vous@exemple.fr'), {
+      target: { value: 'test@petcare.fr' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+      target: { value: 'motdepasse' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /se connecter/i }));
 
     await waitFor(() => {
