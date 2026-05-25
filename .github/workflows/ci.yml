@@ -43,8 +43,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-php-${{ matrix.php }}-
 
+      - name: Prepare .env for CI
+        run: cp .env.test .env
+
       - name: Install Composer dependencies
-        run: composer install --prefer-dist --no-progress --no-interaction
+        run: composer install --prefer-dist --no-progress --no-interaction --no-scripts
 
       - name: Run PHPUnit (tests unitaires)
         run: vendor/bin/phpunit tests/Unit --colors=always --testdox
