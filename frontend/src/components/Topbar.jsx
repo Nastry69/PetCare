@@ -162,7 +162,7 @@ function Topbar() {
           </div>
 
           {user?.photoUrl ? (
-            <img src={user.photoUrl} alt="avatar" className="h-10 w-10 rounded-full object-cover" />
+            <img src={user.photoUrl} alt="avatar" referrerPolicy="no-referrer" className="h-10 w-10 rounded-full object-cover" />
           ) : (
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#EAF3FF] text-[16px] font-semibold text-[#1377EC]">
               {user?.prenom?.[0]?.toUpperCase() || "?"}

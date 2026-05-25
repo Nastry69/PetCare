@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Service\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use KnpU\OAuth2ClientBundle\Client\ClientRegistry;
 use League\OAuth2\Client\Provider\GoogleUser;
@@ -38,7 +39,8 @@ class GoogleAuthController extends AbstractController
         UserRepository $userRepository,
         EntityManagerInterface $em,
         JWTTokenManagerInterface $jwtManager,
-        UserPasswordHasherInterface $hasher
+        UserPasswordHasherInterface $hasher,
+        MailerService $mailerService
     ): RedirectResponse {
         try {
             /** @var GoogleUser $googleUser */
@@ -62,6 +64,12 @@ class GoogleAuthController extends AbstractController
 
                 $em->persist($user);
                 $em->flush();
+
+                // Email de bienvenue pour les nouveaux comptes Google (non bloquant)
+                try {
+                    $mailerService->sendWelcomeEmail($user);
+                } catch (\Throwable) {}
+
             } elseif ($googleUser->getAvatar() && $user->getPhotoUrl() !== $googleUser->getAvatar()) {
                 $user->setPhotoUrl($googleUser->getAvatar());
                 $em->flush();

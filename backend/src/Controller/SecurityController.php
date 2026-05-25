@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Repository\UserRepository;
+use App\Service\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -24,7 +25,8 @@ class SecurityController extends AbstractController
         UserPasswordHasherInterface $hasher,
         EntityManagerInterface $em,
         UserRepository $userRepository,
-        JWTTokenManagerInterface $jwtManager
+        JWTTokenManagerInterface $jwtManager,
+        MailerService $mailerService
     ): JsonResponse {
         $data = json_decode($request->getContent(), true);
 
@@ -53,6 +55,13 @@ class SecurityController extends AbstractController
 
         $em->persist($user);
         $em->flush();
+
+        // Envoi de l'email de bienvenue (non bloquant)
+        try {
+            $mailerService->sendWelcomeEmail($user);
+        } catch (\Throwable) {
+            // L'inscription réussit même si l'email échoue
+        }
 
         $token = $jwtManager->create($user);
 

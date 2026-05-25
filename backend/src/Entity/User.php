@@ -42,19 +42,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, Animal>
      */
-    #[ORM\OneToMany(targetEntity: Animal::class, mappedBy: 'proprietaire')]
+    #[ORM\OneToMany(targetEntity: Animal::class, mappedBy: 'proprietaire', cascade: ['remove'])]
     private Collection $animals;
 
     /**
      * @var Collection<int, Evenement>
      */
-    #[ORM\OneToMany(targetEntity: Evenement::class, mappedBy: 'createur')]
+    #[ORM\OneToMany(targetEntity: Evenement::class, mappedBy: 'createur', cascade: ['remove'])]
     private Collection $evenements;
 
     /**
      * @var Collection<int, PartageAnimal>
      */
-    #[ORM\OneToMany(targetEntity: PartageAnimal::class, mappedBy: 'utilisateur')]
+    #[ORM\OneToMany(targetEntity: PartageAnimal::class, mappedBy: 'utilisateur', cascade: ['remove'])]
     private Collection $partageAnimals;
 
     public function __construct()
