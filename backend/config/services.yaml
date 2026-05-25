@@ -30,7 +30,9 @@ services:
         class: GuzzleHttp\Client
         arguments:
             -
-                verify: '%kernel.project_dir%/config/cacert.pem'
+                verify: true
+                timeout: 10
+                connect_timeout: 5
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

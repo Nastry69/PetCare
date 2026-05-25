@@ -41,13 +41,13 @@ class Animal
     /**
      * @var Collection<int, Evenement>
      */
-    #[ORM\OneToMany(targetEntity: Evenement::class, mappedBy: 'animal')]
+    #[ORM\OneToMany(targetEntity: Evenement::class, mappedBy: 'animal', cascade: ['remove'])]
     private Collection $evenements;
 
     /**
      * @var Collection<int, PartageAnimal>
      */
-    #[ORM\OneToMany(targetEntity: PartageAnimal::class, mappedBy: 'animal')]
+    #[ORM\OneToMany(targetEntity: PartageAnimal::class, mappedBy: 'animal', cascade: ['remove'])]
     private Collection $partageAnimals;
 
     public function __construct()
