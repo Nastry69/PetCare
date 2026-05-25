@@ -57,6 +57,9 @@ jobs:
         run: vendor/bin/phpunit tests/Unit --colors=always --testdox --no-coverage
 
       # ── Tests fonctionnels (SQLite + JWT) ────────────────────────────────
+      - name: Prepare var directory for SQLite
+        run: mkdir -p var
+
       - name: Generate JWT keys for functional tests
         run: |
           mkdir -p config/jwt

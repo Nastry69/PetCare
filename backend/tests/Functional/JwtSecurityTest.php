@@ -102,7 +102,10 @@ class JwtSecurityTest extends WebTestCase
         $this->client->request('POST', '/api/auth/login_check', [], [], ['CONTENT_TYPE' => 'application/json'],
             json_encode(['username' => 'x@x.fr', 'password' => 'x'])
         );
-        $this->assertNotSame(401, $this->client->getResponse()->getStatusCode());
+        // 401 pour mauvais credentials est normal — la route est publique (pas de JWT requis)
+        // On vérifie que ce n'est pas "JWT Token not found" mais bien "Invalid credentials"
+        $body = json_decode($this->client->getResponse()->getContent(), true);
+        $this->assertNotSame('JWT Token not found', $body['message'] ?? '');
     }
 
     public function testResetPasswordIsAccessibleWithoutToken(): void
