@@ -38,7 +38,6 @@ class SecurityControllerTest extends WebTestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-        $this->em->close();
     }
 
     // ── POST /api/register ───────────────────────────────────────────────────
