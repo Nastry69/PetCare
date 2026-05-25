@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main, develop]
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   # ─────────────────────────────────────────────
   # JOB 1 : Tests PHPUnit (backend Symfony)
@@ -50,11 +53,11 @@ jobs:
         run: composer install --prefer-dist --no-progress --no-interaction --no-scripts
 
       - name: Run PHPUnit (tests unitaires)
-        run: vendor/bin/phpunit tests/Unit --colors=always --testdox
+        run: vendor/bin/phpunit tests/Unit --colors=always --testdox --no-coverage
 
       - name: Generate coverage report (text)
         run: vendor/bin/phpunit tests/Unit --coverage-text
-        continue-on-error: true   # la couverture est informative, pas bloquante
+        continue-on-error: true
 
   # ─────────────────────────────────────────────
   # JOB 2 : Lint PHP (syntaxe)
