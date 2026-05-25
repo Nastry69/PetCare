@@ -31,7 +31,6 @@ class JwtSecurityTest extends WebTestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-        $this->em->close();
     }
 
     // ── Routes protégées sans token ──────────────────────────────────────────

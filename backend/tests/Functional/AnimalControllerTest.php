@@ -43,7 +43,6 @@ class AnimalControllerTest extends WebTestCase
     protected function tearDown(): void
     {
         parent::tearDown();
-        $this->em->close();
     }
 
     // ── GET /api/animals ─────────────────────────────────────────────────────
