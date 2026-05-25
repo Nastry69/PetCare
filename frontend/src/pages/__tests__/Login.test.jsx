@@ -1,20 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import Login from '../Login';
 
 /**
  * Tests unitaires de la page Login.
- * Le hook useAuth est mocké pour isoler le composant de l'API.
+ * useAuth est mocké pour isoler le composant de l'API.
  */
 vi.mock('../../context/AuthContext', () => ({
   useAuth: vi.fn(),
 }));
 
-import { useAuth } from '../../context/AuthContext';
-
 function renderLogin(loginFn = vi.fn()) {
-  vi.mocked(useAuth).mockReturnValue({ login: loginFn });
+  useAuth.mockReturnValue({ login: loginFn });
   return render(
     <MemoryRouter>
       <Login />
@@ -23,6 +22,8 @@ function renderLogin(loginFn = vi.fn()) {
 }
 
 describe('Login — rendu', () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it('affiche le champ email', () => {
     renderLogin();
     expect(screen.getByPlaceholderText('vous@exemple.fr')).toBeInTheDocument();
@@ -48,16 +49,14 @@ describe('Login — rendu', () => {
     expect(screen.getByText(/s'inscrire/i)).toBeInTheDocument();
   });
 
-  it("affiche le bouton de connexion Google", () => {
+  it('affiche le bouton de connexion Google', () => {
     renderLogin();
     expect(screen.getByText(/continuer avec google/i)).toBeInTheDocument();
   });
 });
 
 describe('Login — soumission', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
+  beforeEach(() => vi.clearAllMocks());
 
   it('appelle login() avec les valeurs du formulaire', async () => {
     const loginFn = vi.fn().mockResolvedValue(undefined);
@@ -108,10 +107,16 @@ describe('Login — soumission', () => {
   });
 
   it('désactive le bouton pendant le chargement', async () => {
-    let resolve: () => void;
-    const loginFn = vi.fn().mockReturnValue(new Promise((r) => { resolve = r; }));
+    // Promise qui ne se résout pas → simule un chargement infini
+    const loginFn = vi.fn().mockReturnValue(new Promise(() => {}));
     renderLogin(loginFn);
 
+    fireEvent.change(screen.getByPlaceholderText('vous@exemple.fr'), {
+      target: { value: 'jean@petcare.fr' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('••••••••'), {
+      target: { value: 'motdepasse123' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /se connecter/i }));
 
     await waitFor(() => {

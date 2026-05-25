@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
+import api from '../../api/axios';
 import { AuthProvider, useAuth } from '../AuthContext';
 
 /**
@@ -16,8 +17,6 @@ vi.mock('../../api/axios', () => ({
     },
   },
 }));
-
-import api from '../../api/axios';
 
 // Composant de test qui expose l'état du contexte
 function AuthDisplay() {
@@ -44,8 +43,9 @@ describe('AuthProvider — état initial', () => {
     localStorage.clear();
   });
 
-  it('démarre avec user=null et loading=false (pas de token)', async () => {
-    vi.mocked(api.get).mockRejectedValue(new Error('no token'));
+  it('démarre avec user=null et loading=false (pas de token stocké)', async () => {
+    // Pas de token → api.get ne sera pas appelé → on mock quand même par sécurité
+    api.get.mockRejectedValue(new Error('no token'));
 
     await act(async () => {
       render(
@@ -59,9 +59,9 @@ describe('AuthProvider — état initial', () => {
     expect(screen.getByTestId('loading').textContent).toBe('false');
   });
 
-  it('charge l\'utilisateur depuis le token localStorage', async () => {
+  it("charge l'utilisateur depuis le token localStorage", async () => {
     localStorage.setItem('token', 'fake-jwt-token');
-    vi.mocked(api.get).mockResolvedValue({
+    api.get.mockResolvedValue({
       data: { email: 'saved@petcare.fr', nom: 'Test', prenom: 'User' },
     });
 
@@ -78,7 +78,7 @@ describe('AuthProvider — état initial', () => {
 
   it('supprime le token si le chargement initial échoue (token expiré)', async () => {
     localStorage.setItem('token', 'token-invalide');
-    vi.mocked(api.get).mockRejectedValue(new Error('401 Unauthorized'));
+    api.get.mockRejectedValue(new Error('401 Unauthorized'));
 
     await act(async () => {
       render(
@@ -100,15 +100,14 @@ describe('AuthProvider — login', () => {
   });
 
   it('stocke le token et met à jour user après login réussi', async () => {
-    vi.mocked(api.post).mockResolvedValue({ data: { token: 'jwt-token-123' } });
-    vi.mocked(api.get).mockResolvedValueOnce({ data: null }) // loadUser initial
-                       .mockResolvedValueOnce({ data: { email: 'jean@petcare.fr' } }); // /me après login
+    // loadUser initial (pas de token)
+    api.get.mockRejectedValue(new Error('no token'));
 
-    let loginFn: (e: string, p: string) => Promise<void>;
+    let loginFn;
 
     function Wrapper() {
-      const { login } = useAuth();
-      loginFn = login;
+      const auth = useAuth();
+      loginFn = auth.login;
       return <AuthDisplay />;
     }
 
@@ -119,6 +118,10 @@ describe('AuthProvider — login', () => {
         </AuthProvider>
       );
     });
+
+    // Prépare les mocks pour le login
+    api.post.mockResolvedValue({ data: { token: 'jwt-token-123' } });
+    api.get.mockResolvedValue({ data: { email: 'jean@petcare.fr' } });
 
     await act(async () => {
       await loginFn('jean@petcare.fr', 'motdepasse123');
@@ -137,13 +140,13 @@ describe('AuthProvider — logout', () => {
 
   it('supprime le token et remet user à null', async () => {
     localStorage.setItem('token', 'mon-token');
-    vi.mocked(api.get).mockResolvedValue({ data: { email: 'jean@petcare.fr' } });
+    api.get.mockResolvedValue({ data: { email: 'jean@petcare.fr' } });
 
-    let logoutFn: () => void;
+    let logoutFn;
 
     function Wrapper() {
-      const { logout } = useAuth();
-      logoutFn = logout;
+      const auth = useAuth();
+      logoutFn = auth.logout;
       return <AuthDisplay />;
     }
 
@@ -171,19 +174,13 @@ describe('AuthProvider — register', () => {
   });
 
   it("stocke le token et crée l'utilisateur après inscription réussie", async () => {
-    vi.mocked(api.get).mockRejectedValue(new Error('no token')); // initial loadUser
-    vi.mocked(api.post).mockResolvedValue({
-      data: {
-        token: 'register-token',
-        user: { email: 'nouveau@petcare.fr', nom: 'Dupont', prenom: 'Jean' },
-      },
-    });
+    api.get.mockRejectedValue(new Error('no token'));
 
-    let registerFn: (...args: unknown[]) => Promise<void>;
+    let registerFn;
 
     function Wrapper() {
-      const { register } = useAuth();
-      registerFn = register;
+      const auth = useAuth();
+      registerFn = auth.register;
       return <AuthDisplay />;
     }
 
@@ -193,6 +190,13 @@ describe('AuthProvider — register', () => {
           <Wrapper />
         </AuthProvider>
       );
+    });
+
+    api.post.mockResolvedValue({
+      data: {
+        token: 'register-token',
+        user: { email: 'nouveau@petcare.fr', nom: 'Dupont', prenom: 'Jean' },
+      },
     });
 
     await act(async () => {
