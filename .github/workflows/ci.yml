@@ -11,7 +11,7 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────
-  # JOB 1 : Tests PHPUnit (backend Symfony)
+  # JOB 1 : Tests PHPUnit — unitaires + fonctionnels
   # ─────────────────────────────────────────────
   backend-tests:
     name: "PHPUnit — PHP ${{ matrix.php }}"
@@ -34,7 +34,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: mbstring, xml, ctype, iconv, intl, pdo
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite
           coverage: xdebug
           tools: composer:v2
 
@@ -52,12 +52,23 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-interaction --no-scripts
 
-      - name: Run PHPUnit (tests unitaires)
+      # ── Tests unitaires (pas de BDD, pas de JWT) ──────────────────────────
+      - name: Run PHPUnit — tests unitaires
         run: vendor/bin/phpunit tests/Unit --colors=always --testdox --no-coverage
 
       - name: Generate coverage report (text)
         run: vendor/bin/phpunit tests/Unit --coverage-text
         continue-on-error: true
+
+      # ── Tests fonctionnels (SQLite + JWT) ────────────────────────────────
+      - name: Generate JWT keys for functional tests
+        run: |
+          mkdir -p config/jwt
+          openssl genrsa -passout pass:petcare_jwt_test -out config/jwt/private.pem 2048
+          openssl rsa -passin pass:petcare_jwt_test -in config/jwt/private.pem -pubout -out config/jwt/public.pem
+
+      - name: Run PHPUnit — tests fonctionnels
+        run: vendor/bin/phpunit tests/Functional --colors=always --testdox --no-coverage
 
   # ─────────────────────────────────────────────
   # JOB 2 : Lint PHP (syntaxe)
@@ -83,7 +94,7 @@ jobs:
         run: find src -name "*.php" -print0 | xargs -0 -n1 php -l
 
   # ─────────────────────────────────────────────
-  # JOB 3 : Build frontend (React + Vite)
+  # JOB 3 : Build + Tests frontend (React + Vite)
   # ─────────────────────────────────────────────
   frontend-build:
     name: "Frontend Build (Node ${{ matrix.node }})"
@@ -110,6 +121,9 @@ jobs:
 
       - name: Install npm dependencies
         run: npm ci
+
+      - name: Run Vitest (tests unitaires React)
+        run: npm test
 
       - name: Build production bundle
         run: npm run build
