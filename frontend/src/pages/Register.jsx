@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -97,7 +97,7 @@ function Register() {
                 required
                 value={form.password}
                 onChange={set("password")}
-                placeholder="8 caractères minimum"
+                placeholder="••••••••"
                 className="h-11 w-full rounded-[10px] border border-[#E5EAF3] bg-[#F8FAFC] px-4 text-[14px] text-[#0F172A] outline-none focus:border-[#1377EC] focus:ring-2 focus:ring-[#EAF3FF]"
               />
             </div>
