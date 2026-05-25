@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import logo from "../assets/Logo 1.png";
 
 function Login() {
   const { login } = useAuth();
@@ -37,7 +36,7 @@ function Login() {
     <div className="flex min-h-screen items-center justify-center bg-[#F6F8FC] px-4">
       <div className="w-full max-w-[420px]">
         <div className="mb-8 flex flex-col items-center">
-          <img src={logo} alt="PetCare" className="h-12 w-12 rounded-full object-cover" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1377EC] text-[24px] shadow-md">🐾</div>
           <h1 className="mt-3 text-[22px] font-bold text-[#0F172A]">PetCare</h1>
           <p className="mt-1 text-[14px] text-[#64748B]">Connectez-vous à votre compte</p>
         </div>

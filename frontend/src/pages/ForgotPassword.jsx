@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
-import logo from "../assets/Logo 1.png";
 
 function ForgotPassword() {
   const navigate = useNavigate();
@@ -39,7 +38,7 @@ function ForgotPassword() {
     <div className="flex min-h-screen items-center justify-center bg-[#F6F8FC] px-4">
       <div className="w-full max-w-[420px]">
         <div className="mb-8 flex flex-col items-center">
-          <img src={logo} alt="PetCare" className="h-12 w-12 rounded-full object-cover" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1377EC] text-[24px] shadow-md">🐾</div>
           <h1 className="mt-3 text-[22px] font-bold text-[#0F172A]">Mot de passe oublié</h1>
           <p className="mt-1 text-center text-[14px] text-[#64748B]">
             Entrez votre email et choisissez un nouveau mot de passe.
