@@ -39,29 +39,30 @@ class MailerServiceTest extends TestCase
 
     public function testSendWelcomeEmailSentToCorrectRecipient(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendWelcomeEmail($this->makeUser('jean@example.fr', 'Jean', 'Dupont'));
 
-        $this->assertSame('jean@example.fr', $captured[0]->getTo()[0]->getAddress());
+        $this->assertCount(1, $bag);
+        $this->assertSame('jean@example.fr', $bag[0]->getTo()[0]->getAddress());
     }
 
     public function testSendWelcomeEmailSubjectContainsPrenom(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendWelcomeEmail($this->makeUser('a@b.fr', 'Marie', 'Curie'));
 
-        $this->assertStringContainsString('Marie', $captured[0]->getSubject());
+        $this->assertStringContainsString('Marie', $bag[0]->getSubject());
     }
 
     public function testSendWelcomeEmailHtmlContainsPrenomAndCta(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendWelcomeEmail($this->makeUser('a@b.fr', 'Marie', 'Curie'));
 
-        $html = $captured[0]->getHtmlBody();
+        $html = $bag[0]->getHtmlBody();
         $this->assertStringContainsString('Marie', $html);
         $this->assertStringContainsString('PetCare', $html);
         $this->assertStringContainsString('http://localhost:5173/login', $html);
@@ -69,11 +70,11 @@ class MailerServiceTest extends TestCase
 
     public function testSendWelcomeEmailFromAddressMatchesConfig(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendWelcomeEmail($this->makeUser());
 
-        $from = $captured[0]->getFrom()[0];
+        $from = $bag[0]->getFrom()[0];
         $this->assertSame('test@petcare.fr', $from->getAddress());
         $this->assertStringContainsString('PetCare Test', $from->getName());
     }
@@ -90,11 +91,11 @@ class MailerServiceTest extends TestCase
 
     public function testSendReminderEmailSubjectContainsTypeAndAnimal(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendReminderEmail($this->makeEvenement());
 
-        $subject = $captured[0]->getSubject();
+        $subject = $bag[0]->getSubject();
         $this->assertStringContainsString('Rappel PetCare', $subject);
         $this->assertStringContainsString('Vaccin', $subject);
         $this->assertStringContainsString('Rex', $subject);
@@ -102,11 +103,11 @@ class MailerServiceTest extends TestCase
 
     public function testSendReminderEmailHtmlContainsEventDetails(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendReminderEmail($this->makeEvenement());
 
-        $html = $captured[0]->getHtmlBody();
+        $html = $bag[0]->getHtmlBody();
         $this->assertStringContainsString('Rex', $html);
         $this->assertStringContainsString('Vaccin', $html);
         $this->assertStringContainsString('http://localhost:5173/dashboard', $html);
@@ -128,7 +129,7 @@ class MailerServiceTest extends TestCase
 
     public function testSendInvitationEmailHtmlContainsEcritureRoleLabel(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendInvitationEmail(
             $this->makeUser('invite@example.fr', 'Sophie', 'Martin'),
@@ -137,16 +138,16 @@ class MailerServiceTest extends TestCase
             'ecriture'
         );
 
-        $html = $captured[0]->getHtmlBody();
+        $html = $bag[0]->getHtmlBody();
         $this->assertStringContainsString('Lecture', $html);
-        $this->assertStringContainsString('criture', $html); // "&" varie selon encodage
+        $this->assertStringContainsString('criture', $html); // &amp; ou & selon encodage
         $this->assertStringContainsString('Rex', $html);
         $this->assertStringContainsString('Sophie', $html);
     }
 
     public function testSendInvitationEmailHtmlContainsLectureRoleLabel(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendInvitationEmail(
             $this->makeUser('invite@example.fr', 'Sophie', 'Martin'),
@@ -155,12 +156,12 @@ class MailerServiceTest extends TestCase
             'lecture'
         );
 
-        $this->assertStringContainsString('Lecture seule', $captured[0]->getHtmlBody());
+        $this->assertStringContainsString('Lecture seule', $bag[0]->getHtmlBody());
     }
 
     public function testSendInvitationEmailSentToInvitedUser(): void
     {
-        $captured = $this->captureEmail();
+        $bag = $this->captureBag();
 
         $this->service->sendInvitationEmail(
             $this->makeUser('invite@example.fr', 'Sophie', 'Martin'),
@@ -169,27 +170,35 @@ class MailerServiceTest extends TestCase
             'lecture'
         );
 
-        $this->assertSame('invite@example.fr', $captured[0]->getTo()[0]->getAddress());
+        $this->assertSame('invite@example.fr', $bag[0]->getTo()[0]->getAddress());
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     /**
-     * Capture l'objet Email passé à send() dans un tableau par référence.
+     * Prépare le mock pour capturer l'Email envoyé dans un ArrayObject.
      *
-     * @return Email[] (rempli après l'appel à la méthode testée)
+     * Pourquoi ArrayObject et pas array ?
+     * En PHP, les tableaux sont copiés à l'assignation. Si on retourne $captured
+     * (une copie vide) et qu'on peuple $captured dans la closure via use(&$captured),
+     * la variable retournée reste vide. Un ArrayObject est un objet : la closure et
+     * l'appelant partagent la même instance → les emails ajoutés sont visibles.
+     *
+     * @return \ArrayObject<int, Email>
      */
-    private function captureEmail(): array
+    private function captureBag(): \ArrayObject
     {
-        $captured = [];
+        $bag = new \ArrayObject();
+
         $this->mailer
             ->method('send')
-            ->willReturnCallback(static function (RawMessage $msg) use (&$captured): void {
+            ->willReturnCallback(static function (RawMessage $msg) use ($bag): void {
                 if ($msg instanceof Email) {
-                    $captured[] = $msg;
+                    $bag->append($msg);
                 }
             });
-        return $captured;
+
+        return $bag;
     }
 
     private function makeUser(
