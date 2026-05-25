@@ -1,7 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, PawPrint, CalendarDays, Settings } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import logo from "../assets/Logo 1.png";
 
 const navItems = [
   { label: "Tableau de bord", to: "/dashboard", icon: LayoutDashboard },
@@ -22,7 +21,7 @@ function Sidebar() {
   return (
     <aside className="hidden w-[182px] shrink-0 border-r border-[#E5EAF3] bg-white lg:flex lg:flex-col">
       <div className="flex items-center gap-3 px-4 py-4">
-        <img src={logo} alt="PetCare" className="h-9 w-9 rounded-full object-cover" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#1377EC] text-[18px]">🐾</div>
         <div>
           <p className="text-[14px] font-bold leading-none text-[#0F172A]">PetCare</p>
           <p className="mt-1 text-[10px] text-[#64748B]">Gestionnaire d'animaux</p>
