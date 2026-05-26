@@ -26,6 +26,9 @@ class Evenement
     #[ORM\Column]
     private ?bool $rappelActif = null;
 
+    #[ORM\Column(options: ['default' => false])]
+    private bool $rappelEnvoye = false;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $commentaire = null;
 
@@ -168,6 +171,18 @@ class Evenement
     public function setCreateur(?User $createur): static
     {
         $this->createur = $createur;
+
+        return $this;
+    }
+
+    public function isRappelEnvoye(): bool
+    {
+        return $this->rappelEnvoye;
+    }
+
+    public function setRappelEnvoye(bool $rappelEnvoye): static
+    {
+        $this->rappelEnvoye = $rappelEnvoye;
 
         return $this;
     }

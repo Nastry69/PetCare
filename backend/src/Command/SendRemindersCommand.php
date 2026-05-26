@@ -4,6 +4,7 @@ namespace App\Command;
 
 use App\Repository\EvenementRepository;
 use App\Service\MailerService;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,6 +17,7 @@ class SendRemindersCommand extends Command
     public function __construct(
         private EvenementRepository $evenementRepository,
         private MailerService $mailerService,
+        private EntityManagerInterface $em,
     ) {
         parent::__construct();
     }
@@ -47,12 +49,17 @@ class SendRemindersCommand extends Command
 
             try {
                 $this->mailerService->sendReminderEmail($evenement);
+                $evenement->setRappelEnvoye(true);
                 $io->writeln(sprintf('  ✓ %s', $label));
                 $sent++;
             } catch (\Throwable $e) {
                 $io->writeln(sprintf('  ✗ %s — %s', $label, $e->getMessage()));
                 $errors++;
             }
+        }
+
+        if ($sent > 0) {
+            $this->em->flush();
         }
 
         if ($errors === 0) {
