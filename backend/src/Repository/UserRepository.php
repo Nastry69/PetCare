@@ -37,4 +37,19 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     {
         return $this->findOneBy(['email' => $email]) !== null;
     }
+
+    /**
+     * Recherche un utilisateur par son token de réinitialisation de mot de passe.
+     * Retourne null si le token est introuvable ou expiré.
+     */
+    public function findByResetToken(string $token): ?User
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.resetToken = :token')
+            ->andWhere('u.resetTokenExpiresAt > :now')
+            ->setParameter('token', $token)
+            ->setParameter('now', new \DateTimeImmutable())
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
 }

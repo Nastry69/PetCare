@@ -9,12 +9,11 @@ use Symfony\Component\Mime\Email;
 
 class MailerService
 {
-    private const FRONTEND_URL = 'http://localhost:5173';
-
     public function __construct(
         private MailerInterface $mailer,
         private string $fromEmail,
-        private string $fromName
+        private string $fromName,
+        private string $frontendUrl = 'http://localhost:3000'
     ) {
     }
 
@@ -23,7 +22,7 @@ class MailerService
     public function sendWelcomeEmail(User $user): void
     {
         $prenom = htmlspecialchars($user->getPrenom());
-        $loginUrl = self::FRONTEND_URL . '/login';
+        $loginUrl = $this->frontendUrl . '/login';
 
         $html = <<<HTML
         <!DOCTYPE html>
@@ -119,7 +118,7 @@ class MailerService
         $animalNom   = htmlspecialchars($animal?->getNom() ?? '');
         $typeLibelle = htmlspecialchars($type?->getLibelle() ?? 'Événement');
         $couleur     = htmlspecialchars($type?->getCouleur() ?? '#1377EC');
-        $dashUrl     = self::FRONTEND_URL . '/dashboard';
+        $dashUrl     = $this->frontendUrl . '/dashboard';
 
         $commentaireRow = $evenement->getCommentaire()
             ? '<tr>
@@ -203,6 +202,80 @@ class MailerService
         $this->mailer->send($email);
     }
 
+    // ── Email de réinitialisation de mot de passe ────────────────────────────
+
+    public function sendPasswordResetEmail(User $user, string $token): void
+    {
+        $prenom    = htmlspecialchars($user->getPrenom());
+        $resetUrl  = $this->frontendUrl . '/reset-password?token=' . urlencode($token);
+
+        $html = <<<HTML
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="margin:0;padding:0;background:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+          <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.08)">
+
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#2A8BF2 0%,#1377EC 100%);padding:40px 40px 36px;text-align:center">
+              <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:#ffffff;margin-bottom:14px;font-size:32px;box-shadow:0 4px 16px rgba(0,0,0,0.15)">🔐</div>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:-0.5px;text-shadow:0 1px 4px rgba(0,0,0,0.15)">Réinitialisation du mot de passe</h1>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:13px">PetCare — Sécurité du compte</p>
+            </div>
+
+            <!-- Body -->
+            <div style="padding:40px">
+              <h2 style="margin:0 0 8px;color:#0F172A;font-size:20px;font-weight:700">Bonjour {$prenom},</h2>
+              <p style="margin:0 0 24px;color:#475569;font-size:15px;line-height:1.6">
+                Vous avez demandé la réinitialisation de votre mot de passe PetCare.<br>
+                Cliquez sur le bouton ci-dessous pour choisir un nouveau mot de passe.
+              </p>
+
+              <!-- Warning box -->
+              <div style="background:#FFF4E5;border-radius:12px;padding:16px 20px;margin-bottom:28px;border-left:4px solid #F59E0B">
+                <p style="margin:0;color:#92400E;font-size:13px;line-height:1.5">
+                  ⏰ <strong>Ce lien est valable 1 heure.</strong><br>
+                  Si vous n'avez pas demandé cette réinitialisation, ignorez cet email — votre mot de passe restera inchangé.
+                </p>
+              </div>
+
+              <!-- CTA -->
+              <div style="text-align:center;margin-bottom:28px">
+                <a href="{$resetUrl}"
+                   style="display:inline-block;background:#1377EC;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:12px;font-size:15px;font-weight:700;letter-spacing:0.02em">
+                  Réinitialiser mon mot de passe →
+                </a>
+              </div>
+
+              <!-- Fallback link -->
+              <p style="margin:0;color:#94A3B8;font-size:12px;text-align:center;word-break:break-all">
+                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :<br>
+                <span style="color:#1377EC">{$resetUrl}</span>
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background:#F8FAFC;padding:20px 40px;text-align:center;border-top:1px solid #E2E8F0">
+              <p style="margin:0;color:#94A3B8;font-size:12px">
+                PetCare · Votre gestionnaire d'animaux de compagnie<br>
+                <span style="color:#CBD5E1">Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.</span>
+              </p>
+            </div>
+
+          </div>
+        </body>
+        </html>
+        HTML;
+
+        $email = (new Email())
+            ->from(sprintf('%s <%s>', $this->fromName, $this->fromEmail))
+            ->to($user->getEmail())
+            ->subject('🔐 Réinitialisation de votre mot de passe PetCare')
+            ->html($html);
+
+        $this->mailer->send($email);
+    }
+
     // ── Email d'invitation (partage) ─────────────────────────────────────────
 
     public function sendInvitationEmail(User $invitedUser, User $owner, string $animalNom, string $role): void
@@ -211,7 +284,7 @@ class MailerService
         $ownerNom    = htmlspecialchars($owner->getPrenom() . ' ' . $owner->getNom());
         $animal      = htmlspecialchars($animalNom);
         $roleLabel   = $role === 'ecriture' ? 'Lecture & Écriture' : 'Lecture seule';
-        $loginUrl    = self::FRONTEND_URL . '/login';
+        $loginUrl    = $this->frontendUrl . '/login';
 
         $html = <<<HTML
         <!DOCTYPE html>

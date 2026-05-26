@@ -85,6 +85,8 @@ services:
     restart: unless-stopped
 
   # ── Frontend React (dev server Vite) ───────────────────────────
+  # Pour le développement local : utiliser ce service (hot-reload Vite)
+  # Pour la production         : utiliser docker-compose.yml à la racine
   frontend:
     image: node:20-alpine
     working_dir: /app

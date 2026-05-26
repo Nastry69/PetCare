@@ -65,7 +65,7 @@ class MailerServiceTest extends TestCase
         $html = $bag[0]->getHtmlBody();
         $this->assertStringContainsString('Marie', $html);
         $this->assertStringContainsString('PetCare', $html);
-        $this->assertStringContainsString('http://localhost:5173/login', $html);
+        $this->assertStringContainsString('http://localhost:3000/login', $html);
     }
 
     public function testSendWelcomeEmailFromAddressMatchesConfig(): void
@@ -110,7 +110,7 @@ class MailerServiceTest extends TestCase
         $html = $bag[0]->getHtmlBody();
         $this->assertStringContainsString('Rex', $html);
         $this->assertStringContainsString('Vaccin', $html);
-        $this->assertStringContainsString('http://localhost:5173/dashboard', $html);
+        $this->assertStringContainsString('http://localhost:3000/dashboard', $html);
     }
 
     // ── sendInvitationEmail ──────────────────────────────────────────────────

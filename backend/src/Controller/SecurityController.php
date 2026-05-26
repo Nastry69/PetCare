@@ -189,6 +189,48 @@ class SecurityController extends AbstractController
         ]);
     }
 
+    /**
+     * Étape 1 — Demande de réinitialisation.
+     * Génère un token sécurisé, le sauvegarde et envoie l'email.
+     * Retourne TOUJOURS 200 pour éviter l'énumération des emails (OWASP A07).
+     */
+    #[Route('/auth/forgot-password', name: 'api_forgot_password', methods: ['POST'])]
+    public function forgotPassword(
+        Request $request,
+        UserRepository $userRepository,
+        EntityManagerInterface $em,
+        MailerService $mailerService
+    ): JsonResponse {
+        $data  = json_decode($request->getContent(), true);
+        $email = trim($data['email'] ?? '');
+
+        $user = $userRepository->findByEmail($email);
+
+        if ($user) {
+            $token     = bin2hex(random_bytes(32)); // 64 caractères hex — cryptographiquement sûr
+            $expiresAt = new \DateTimeImmutable('+1 hour');
+
+            $user->setResetToken($token);
+            $user->setResetTokenExpiresAt($expiresAt);
+            $em->flush();
+
+            try {
+                $mailerService->sendPasswordResetEmail($user, $token);
+            } catch (\Throwable) {
+                // L'envoi de l'email ne bloque pas la réponse
+            }
+        }
+
+        // Réponse identique que l'email existe ou non (anti-énumération)
+        return $this->json([
+            'message' => 'Si un compte est associé à cet email, un lien de réinitialisation vous a été envoyé.',
+        ]);
+    }
+
+    /**
+     * Étape 2 — Réinitialisation via token.
+     * Valide le token (existence + non-expiration), met à jour le mot de passe, invalide le token.
+     */
     #[Route('/auth/reset-password', name: 'api_reset_password', methods: ['POST'])]
     public function resetPassword(
         Request $request,
@@ -196,20 +238,27 @@ class SecurityController extends AbstractController
         UserPasswordHasherInterface $hasher,
         EntityManagerInterface $em
     ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-        $email = $data['email'] ?? '';
+        $data        = json_decode($request->getContent(), true);
+        $token       = trim($data['token'] ?? '');
         $newPassword = $data['newPassword'] ?? '';
+
+        if (empty($token)) {
+            return $this->json(['message' => 'Token manquant.'], 400);
+        }
 
         if (strlen($newPassword) < 8) {
             return $this->json(['message' => 'Le mot de passe doit contenir au moins 8 caractères.'], 400);
         }
 
-        $user = $userRepository->findByEmail($email);
+        $user = $userRepository->findByResetToken($token);
+
         if (!$user) {
-            return $this->json(['message' => 'Aucun compte trouvé avec cet email.'], 404);
+            return $this->json(['message' => 'Ce lien est invalide ou a expiré. Veuillez faire une nouvelle demande.'], 400);
         }
 
         $user->setPassword($hasher->hashPassword($user, $newPassword));
+        $user->setResetToken(null);
+        $user->setResetTokenExpiresAt(null);
         $em->flush();
 
         return $this->json(['message' => 'Mot de passe réinitialisé avec succès.']);

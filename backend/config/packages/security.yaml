@@ -23,6 +23,11 @@ security:
             stateless: true
             security: false
 
+        forgot_password:
+            pattern: ^/api/auth/forgot-password
+            stateless: true
+            security: false
+
         reset_password:
             pattern: ^/api/auth/reset-password
             stateless: true
