@@ -16,6 +16,7 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  *   GET  /api/me          (protégée)
  *   PUT  /api/me          (protégée)
  *   DELETE /api/me        (protégée)
+ *   POST /api/auth/forgot-password
  *   POST /api/auth/reset-password
  */
 class SecurityControllerTest extends WebTestCase
@@ -170,34 +171,77 @@ class SecurityControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(401);
     }
 
-    // ── POST /api/auth/reset-password ────────────────────────────────────────
+    // ── POST /api/auth/forgot-password ──────────────────────────────────────
 
-    public function testResetPasswordWithShortPasswordReturns400(): void
-    {
-        $this->post('/api/auth/reset-password', ['email' => 'x@y.fr', 'newPassword' => 'court']);
-        $this->assertResponseStatusCodeSame(400);
-    }
-
-    public function testResetPasswordWithUnknownEmailReturns404(): void
-    {
-        $this->post('/api/auth/reset-password', ['email' => 'inconnu@petcare.fr', 'newPassword' => 'nouveaumotdepasse']);
-        $this->assertResponseStatusCodeSame(404);
-    }
-
-    public function testResetPasswordWithValidDataUpdatesPassword(): void
+    public function testForgotPasswordWithKnownEmailReturns200(): void
     {
         $this->registerUser('reset@petcare.fr', 'ancienmdp123');
 
-        $this->post('/api/auth/reset-password', ['email' => 'reset@petcare.fr', 'newPassword' => 'nouveaumdp456']);
+        $this->post('/api/auth/forgot-password', ['email' => 'reset@petcare.fr']);
+
+        // Toujours 200, même si l'email existe (anti-énumération)
+        $this->assertResponseStatusCodeSame(200);
+        $this->assertStringContainsString('lien', $this->json()['message']);
+    }
+
+    public function testForgotPasswordWithUnknownEmailReturns200TooAntiEnumeration(): void
+    {
+        // OWASP A07 : même réponse pour un email inconnu
+        $this->post('/api/auth/forgot-password', ['email' => 'inconnu@petcare.fr']);
+        $this->assertResponseStatusCodeSame(200);
+    }
+
+    // ── POST /api/auth/reset-password ────────────────────────────────────────
+
+    public function testResetPasswordWithMissingTokenReturns400(): void
+    {
+        $this->post('/api/auth/reset-password', ['newPassword' => 'nouveaumdp456']);
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testResetPasswordWithShortPasswordReturns400(): void
+    {
+        $this->post('/api/auth/reset-password', ['token' => 'abc123', 'newPassword' => 'court']);
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testResetPasswordWithInvalidTokenReturns400(): void
+    {
+        $this->post('/api/auth/reset-password', ['token' => 'token-invalide-inexistant', 'newPassword' => 'nouveaumdp456']);
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testResetPasswordWithValidTokenUpdatesPassword(): void
+    {
+        // 1. Inscription
+        $this->registerUser('tokenreset@petcare.fr', 'ancienmdp123');
+
+        // 2. Demande de reset → le token est créé en base
+        $this->post('/api/auth/forgot-password', ['email' => 'tokenreset@petcare.fr']);
+        $this->assertResponseStatusCodeSame(200);
+
+        // 3. Récupérer le token directement depuis la base (test uniquement)
+        $user = $this->em->getRepository(\App\Entity\User::class)
+            ->findOneBy(['email' => 'tokenreset@petcare.fr']);
+        $this->assertNotNull($user->getResetToken(), 'Le token doit être défini après forgot-password');
+
+        $token = $user->getResetToken();
+
+        // 4. Réinitialiser avec le token valide
+        $this->post('/api/auth/reset-password', ['token' => $token, 'newPassword' => 'nouveaumdp456']);
         $this->assertResponseIsSuccessful();
 
-        // L'ancien mot de passe ne doit plus fonctionner
-        $this->post('/api/auth/login_check', ['username' => 'reset@petcare.fr', 'password' => 'ancienmdp123']);
+        // 5. L'ancien mot de passe ne doit plus fonctionner
+        $this->post('/api/auth/login_check', ['username' => 'tokenreset@petcare.fr', 'password' => 'ancienmdp123']);
         $this->assertResponseStatusCodeSame(401);
 
-        // Le nouveau doit fonctionner
-        $this->post('/api/auth/login_check', ['username' => 'reset@petcare.fr', 'password' => 'nouveaumdp456']);
+        // 6. Le nouveau mot de passe fonctionne
+        $this->post('/api/auth/login_check', ['username' => 'tokenreset@petcare.fr', 'password' => 'nouveaumdp456']);
         $this->assertResponseStatusCodeSame(200);
+
+        // 7. Le token est bien invalidé après usage
+        $this->em->refresh($user);
+        $this->assertNull($user->getResetToken(), 'Le token doit être null après usage');
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

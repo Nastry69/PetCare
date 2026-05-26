@@ -1,0 +1,21 @@
+# ── Clés JWT (ne pas inclure dans l'image) ──
+config/jwt/*.pem
+
+# ── Environnement ────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Cache et logs Symfony ────────────────────
+var/cache/
+var/log/
+
+# ── Dépendances (installées par Composer) ────
+# vendor/  ← laisser commenté : le layer Composer les installe d'abord
+
+# ── Outils de dev ────────────────────────────
+.git
+.github
+tests/
+phpunit.xml*
+.php-cs-fixer*

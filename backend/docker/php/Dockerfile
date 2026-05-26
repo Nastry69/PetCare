@@ -8,6 +8,7 @@ RUN apk add --no-cache \
         bash \
         git \
         unzip \
+        openssl \
         libpq-dev \
         icu-dev \
     && docker-php-ext-install \
@@ -34,8 +35,12 @@ COPY . .
 RUN composer dump-autoload --optimize
 
 # ── Permissions Symfony (var/) ───────────────────────────────────
-RUN mkdir -p var && chmod -R 777 var
+RUN mkdir -p var config/jwt && chmod -R 777 var
+
+# ── Entrypoint ────────────────────────────────────────────────────
+COPY docker/php/entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 EXPOSE 9000
 
-CMD ["php-fpm"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
