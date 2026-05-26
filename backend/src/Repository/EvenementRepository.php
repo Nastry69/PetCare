@@ -53,26 +53,50 @@ class EvenementRepository extends ServiceEntityRepository
             ->getResult();
     }
 
-    /** Events where rappelActif is true and reminder should be sent today (event is in rappelJoursAvant days) */
+    /**
+     * Retourne les événements dont le rappel doit être envoyé maintenant.
+     *
+     * Logique : le rappel se déclenche exactement N jours avant l'heure du RDV.
+     * Ex. RDV le 30/05 à 12h00 avec rappelJoursAvant=2 → email envoyé le 28/05 à 12h00.
+     *
+     * Le scheduler appelle cette méthode chaque minute ; on utilise une fenêtre
+     * d'une minute pour ne pas manquer le créneau, et rappelEnvoye=false pour
+     * éviter les doublons.
+     *
+     * @return Evenement[]
+     */
     public function findRappelsDuJour(): array
     {
+        // Candidats : rappel actif, pas encore envoyé, événement dans le futur
         $candidates = $this->createQueryBuilder('e')
             ->where('e.rappelActif = true')
+            ->andWhere('e.rappelEnvoye = false')
             ->andWhere('e.statut != :annule')
-            ->andWhere('e.dateHeureEvenement >= :tomorrow')
+            ->andWhere('e.dateHeureEvenement > :now')
             ->setParameter('annule', 'annule')
-            ->setParameter('tomorrow', new \DateTime('tomorrow'))
+            ->setParameter('now', new \DateTime())
             ->getQuery()
             ->getResult();
 
-        $today = new \DateTime('today');
+        // Fenêtre courante : minute actuelle (ex. 12:03:00 → 12:04:00)
+        $now         = new \DateTime();
+        $windowStart = (clone $now)->setTime((int) $now->format('H'), (int) $now->format('i'), 0);
+        $windowEnd   = (clone $windowStart)->modify('+1 minute');
 
         return array_values(array_filter(
             $candidates,
-            static function (Evenement $e) use ($today): bool {
-                $joursAvant = $e->getRappelJoursAvant() ?? 1;
-                $diff = (int) $today->diff($e->getDateHeureEvenement())->days;
-                return $diff === $joursAvant;
+            static function (Evenement $e) use ($windowStart, $windowEnd): bool {
+                $joursAvant   = $e->getRappelJoursAvant() ?? 1;
+                // Heure cible = heure du RDV moins N jours, secondes ignorées
+                $reminderTime = (clone $e->getDateHeureEvenement())
+                    ->modify("-{$joursAvant} days")
+                    ->setTime(
+                        (int) $e->getDateHeureEvenement()->format('H'),
+                        (int) $e->getDateHeureEvenement()->format('i'),
+                        0
+                    );
+
+                return $reminderTime >= $windowStart && $reminderTime < $windowEnd;
             }
         ));
     }

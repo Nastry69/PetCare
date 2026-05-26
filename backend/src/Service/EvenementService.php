@@ -93,15 +93,23 @@ class EvenementService
 
         if (!empty($data['dateHeureEvenement'])) {
             $evenement->setDateHeureEvenement(new \DateTime($data['dateHeureEvenement']));
+            // La date a changé → le rappel doit être renvoyé à la nouvelle heure
+            $evenement->setRappelEnvoye(false);
         }
         if (isset($data['statut'])) {
             $evenement->setStatut($data['statut']);
         }
         if (array_key_exists('rappelJoursAvant', $data)) {
             $evenement->setRappelJoursAvant($data['rappelJoursAvant'] !== null ? (int) $data['rappelJoursAvant'] : null);
+            // Le délai a changé → le rappel doit être renvoyé au nouveau créneau
+            $evenement->setRappelEnvoye(false);
         }
         if (isset($data['rappelActif'])) {
             $evenement->setRappelActif((bool) $data['rappelActif']);
+            // Réactivation manuelle → autoriser un nouvel envoi
+            if ($data['rappelActif']) {
+                $evenement->setRappelEnvoye(false);
+            }
         }
         if (array_key_exists('commentaire', $data)) {
             $evenement->setCommentaire($data['commentaire']);

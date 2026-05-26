@@ -114,6 +114,7 @@ class MailerService
         $date        = $evenement->getDateHeureEvenement()?->format('d/m/Y') ?? '';
         $heure       = $evenement->getDateHeureEvenement()?->format('H\hi') ?? '';
         $delai       = $joursAvant === 1 ? 'demain' : "dans $joursAvant jours";
+        $delaiTableau = $joursAvant === 1 ? '1 jour' : "$joursAvant jours";
         $prenom      = htmlspecialchars($user->getPrenom());
         $animalNom   = htmlspecialchars($animal?->getNom() ?? '');
         $typeLibelle = htmlspecialchars($type?->getLibelle() ?? 'Événement');
@@ -165,7 +166,7 @@ class MailerService
                   </tr>
                   <tr style="border-bottom:1px solid #F1F5F9">
                     <td style="padding:12px 16px;color:#64748B;font-size:13px;white-space:nowrap">⏰ Dans</td>
-                    <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#1377EC">{$delai}</td>
+                    <td style="padding:12px 16px;font-size:14px;font-weight:700;color:#1377EC">{$delaiTableau}</td>
                   </tr>
                   {$commentaireRow}
                 </table>
