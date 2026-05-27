@@ -52,6 +52,10 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-progress --no-interaction --no-scripts
 
+      # ── Audit sécurité dépendances PHP (OWASP A06) ───────────────────────
+      - name: Composer security audit
+        run: composer audit --no-dev --format=plain
+
       # ── Tests unitaires (pas de BDD, pas de JWT) ──────────────────────────
       - name: Run PHPUnit — tests unitaires
         run: vendor/bin/phpunit tests/Unit --colors=always --testdox --no-coverage
@@ -118,6 +122,10 @@ jobs:
 
       - name: Install npm dependencies
         run: npm install
+
+      # ── Audit sécurité dépendances Node (OWASP A06) ──────────────────────
+      - name: npm security audit
+        run: npm audit --audit-level=high --omit=dev
 
       - name: Run Vitest (tests unitaires React)
         run: npm test

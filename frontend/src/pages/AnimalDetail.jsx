@@ -140,7 +140,6 @@ function AnimalDetail() {
       await api.delete(`/partages/${partageId}`);
       setPartages((prev) => prev.filter((p) => p.id !== partageId));
     } catch {
-      // silently ignore
     } finally {
       setRemovingId(null);
     }
@@ -151,7 +150,6 @@ function AnimalDetail() {
       const res = await api.patch(`/partages/${partageId}`, { rolePartage: newRole });
       setPartages((prev) => prev.map((p) => (p.id === partageId ? res.data : p)));
     } catch {
-      // silently ignore
     }
   };
 
@@ -374,7 +372,7 @@ function AnimalDetail() {
         )}
       </section>
 
-      {/* ── Sharing section (owner only) ── */}
+      {/* ── Sharing section ── */}
       {isOwner && (
         <section className="mt-8 rounded-[18px] border border-[#E5EAF3] bg-white p-6 shadow-sm">
           <h2 className="mb-5 flex items-center gap-2 text-[16px] font-semibold text-[#0F172A]">

@@ -4,8 +4,6 @@ import api from "../api/axios";
 
 /**
  * ResetPassword — Étape 2 du reset.
- * L'utilisateur arrive depuis l'email avec ?token=xxx dans l'URL.
- * Il saisit son nouveau mot de passe.
  */
 function ResetPassword() {
   const navigate        = useNavigate();

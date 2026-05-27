@@ -4,8 +4,6 @@ import api from "../api/axios";
 
 /**
  * ForgotPassword — Étape 1 du reset.
- * L'utilisateur saisit son email. Un email avec lien sécurisé lui est envoyé.
- * → La page ResetPassword (/reset-password?token=xxx) prend en charge l'étape 2.
  */
 function ForgotPassword() {
   const [email,   setEmail]   = useState("");
@@ -21,7 +19,6 @@ function ForgotPassword() {
       await api.post("/auth/forgot-password", { email });
       setSuccess(true);
     } catch {
-      // On affiche un message générique pour ne pas divulguer l'existence du compte
       setSuccess(true);
     } finally {
       setLoading(false);

@@ -44,7 +44,6 @@ function Calendar() {
 
   const firstDay = new Date(year, month, 1);
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  // Monday-based: 0=Mon … 6=Sun
   const startOffset = (firstDay.getDay() + 6) % 7;
 
   const eventsThisMonth = events.filter((e) => {
