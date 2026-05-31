@@ -39,6 +39,12 @@ function Register() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#F6F8FC] px-4 py-8">
       <div className="w-full max-w-[420px]">
+        <div className="mb-4">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-[13px] text-[#64748B] hover:text-[#1377EC] transition">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5"/><path d="m12 5-7 7 7 7"/></svg>
+            Retour à l'accueil
+          </Link>
+        </div>
         <div className="mb-8 flex flex-col items-center">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#1377EC] text-[24px] shadow-md">🐾</div>
           <h1 className="mt-3 text-[22px] font-bold text-[#0F172A]">PetCare</h1>

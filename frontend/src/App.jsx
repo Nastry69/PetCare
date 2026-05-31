@@ -13,6 +13,7 @@ import AuthCallback from './pages/AuthCallback'
 import Home from './pages/Home'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import NotFound from './pages/NotFound'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -50,10 +51,12 @@ function App() {
               <Route path="/events/:id/edit" element={<EventForm />} />
               <Route path="/calendar" element={<Calendar />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
         </ProtectedRoute>
       } />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }

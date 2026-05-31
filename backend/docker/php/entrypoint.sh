@@ -15,6 +15,10 @@
 # ================================================================
 set -e
 
+if [ ! -f /app/.env ]; then
+    printf "APP_ENV=%s\nAPP_SECRET=%s\n" "${APP_ENV:-prod}" "${APP_SECRET:-}" > /app/.env
+fi
+
 APP_ENV="${APP_ENV:-prod}"
 WORKER_MODE="${WORKER_MODE:-0}"
 
@@ -49,6 +53,10 @@ if [ ! -f /app/config/jwt/private.pem ]; then
 else
     echo "✅  Clés JWT déjà présentes."
 fi
+
+# Permissions JWT — toujours appliquées (PHP-FPM = www-data, entrypoint = root)
+chmod 777 /app/config/jwt/private.pem 2>/dev/null || true
+chmod 777 /app/config/jwt/public.pem  2>/dev/null || true
 
 # ── 2. Permissions dossiers d'upload ────────────────────────────
 echo ""
@@ -86,13 +94,21 @@ if [ "$WORKER_MODE" = "0" ]; then
         echo "📦  Première installation — création du schéma depuis les entités..."
         php bin/console doctrine:schema:create --no-interaction --env="${APP_ENV}"
 
-        echo "🔖  Marquage des migrations héritées (MySQL)..."
-        php bin/console doctrine:migrations:version \
+        echo "🔖  Initialisation de la table de suivi des migrations..."
+        php bin/console doctrine:migrations:sync-metadata-storage \
+            --no-interaction --env="${APP_ENV}" 2>/dev/null || true
+
+        echo "🔖  Marquage des migrations de schéma comme déjà appliquées..."
+        for version in \
             'DoctrineMigrations\Version20260327142751' \
-            --add --no-interaction --env="${APP_ENV}" 2>/dev/null || true
-        php bin/console doctrine:migrations:version \
             'DoctrineMigrations\Version20260502000001' \
-            --add --no-interaction --env="${APP_ENV}" 2>/dev/null || true
+            'DoctrineMigrations\Version20260526000001' \
+            'DoctrineMigrations\Version20260526000003'; do
+            php bin/console doctrine:migrations:version \
+                "$version" --add --no-interaction --env="${APP_ENV}" || true
+        done
+        # NB: Version20260526000002 (seed types événements) est volontairement
+        # exclue pour qu'elle s'exécute réellement via doctrine:migrations:migrate
 
         echo "✅  Schéma créé."
     fi
@@ -108,7 +124,7 @@ if [ "$WORKER_MODE" = "0" ]; then
     if [ "$APP_ENV" = "prod" ]; then
         echo ""
         echo "🗃️   Warmup du cache Symfony (prod)..."
-        php bin/console cache:warmup --env=prod
+        php bin/console cache:warmup --env=prod || echo "⚠️  Warmup échoué — le cache sera reconstruit à la première requête."
         echo "✅  Cache prêt."
     fi
 else
@@ -118,7 +134,7 @@ else
     sleep 5
 fi
 
-# ── 5. Démarrage du processus principal ──────────────────────────
+# ── 6. Démarrage du processus principal ──────────────────────────
 # Par défaut : PHP-FPM. Si une commande est passée en argument, elle est exécutée à la place.
 # Ex : docker compose worker → exec php bin/console messenger:consume scheduler_default
 if [ "$#" -gt 0 ]; then
