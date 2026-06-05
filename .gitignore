@@ -7,7 +7,7 @@
 /public/bundles/
 /public/uploads/
 /var/
-
+graphify-out
 /vendor/
 .env
 ###< symfony/framework-bundle ###

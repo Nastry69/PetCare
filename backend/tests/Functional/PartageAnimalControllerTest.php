@@ -237,8 +237,9 @@ class PartageAnimalControllerTest extends WebTestCase
 
     public function testDeletePartageReturns403ForNonOwner(): void
     {
+        // L'invité peut quitter (200) — ce test vérifie qu'un tiers sans lien reçoit 403
         $id = $this->createPartage();
-        $this->client->request('DELETE', "/api/partages/$id", [], [], $this->headers($this->invitedToken));
+        $this->client->request('DELETE', "/api/partages/$id", [], [], $this->headers($this->otherToken));
         $this->assertResponseStatusCodeSame(403);
     }
 
