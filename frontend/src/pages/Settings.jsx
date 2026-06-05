@@ -1,6 +1,7 @@
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { Camera, Download, Trash2, X, FileJson, FileText, FileSpreadsheet, Globe } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Camera, Download, Trash2, X, FileJson, FileText, FileSpreadsheet, Globe, Users } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
@@ -129,6 +130,16 @@ function Settings() {
   const [exporting, setExporting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
+  const [sharedAnimals, setSharedAnimals] = useState([]);
+  const [sharedLoading, setSharedLoading] = useState(true);
+  const [leavingId, setLeavingId] = useState(null);
+
+  useEffect(() => {
+    api.get("/partages")
+      .then((res) => setSharedAnimals(res.data))
+      .catch(() => {})
+      .finally(() => setSharedLoading(false));
+  }, []);
 
   const set = (field) => (e) => {
     setSuccess(""); setError("");
@@ -196,6 +207,18 @@ function Settings() {
     } catch {
       setError("Erreur lors de la suppression du compte.");
       setDeleting(false);
+    }
+  };
+
+  const handleLeave = async (partageId) => {
+    setLeavingId(partageId);
+    try {
+      await api.delete(`/partages/${partageId}`);
+      setSharedAnimals((prev) => prev.filter((p) => p.id !== partageId));
+    } catch {
+      setError("Erreur lors de la suppression du partage.");
+    } finally {
+      setLeavingId(null);
     }
   };
 
@@ -398,6 +421,50 @@ function Settings() {
             {deleting ? "Suppression…" : "Supprimer mon compte"}
           </button>
         </div>
+      </div>
+
+      <div className="mt-5 rounded-[18px] border border-[#E5EAF3] bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <Users size={16} className="text-[#1377EC]" />
+          <h2 className="text-[16px] font-semibold text-[#0F172A]">Animaux partagés avec moi</h2>
+        </div>
+        {sharedLoading ? (
+          <p className="text-[13px] text-[#94A3B8]">Chargement…</p>
+        ) : sharedAnimals.length === 0 ? (
+          <p className="text-[13px] text-[#94A3B8]">Aucun animal partagé avec vous pour l'instant.</p>
+        ) : (
+          <div className="divide-y divide-[#EEF2F7]">
+            {sharedAnimals.map((p) => (
+              <div key={p.id} className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EAF3FF] text-[18px]">🐾</div>
+                  <div>
+                    <Link to={`/animals/${p.animal.id}`} className="text-[14px] font-semibold text-[#0F172A] hover:text-[#1377EC]">
+                      {p.animal.nom}
+                    </Link>
+                    <p className="text-[12px] text-[#64748B]">{p.animal.espece}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                    p.rolePartage === "ecriture"
+                      ? "bg-[#EAF8EF] text-[#22C55E]"
+                      : "bg-[#F1F5F9] text-[#64748B]"
+                  }`}>
+                    {p.rolePartage === "ecriture" ? "Écriture" : "Lecture"}
+                  </span>
+                  <button
+                    onClick={() => handleLeave(p.id)}
+                    disabled={leavingId === p.id}
+                    className="h-8 rounded-[8px] border border-[#EF4444] px-3 text-[12px] font-semibold text-[#EF4444] hover:bg-[#FEF2F2] disabled:opacity-60 transition"
+                  >
+                    {leavingId === p.id ? "…" : "Quitter"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-5 rounded-[18px] border border-[#E5EAF3] bg-white p-6 shadow-sm">

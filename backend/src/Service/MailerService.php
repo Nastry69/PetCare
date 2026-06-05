@@ -7,6 +7,10 @@ use App\Entity\User;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 
+/**
+ * Envoi des 4 emails transactionnels : bienvenue, rappel événement, reset mot de passe, invitation partage.
+ * Utilise Symfony Mailer (SMTP Brevo en prod, Mailpit en local via Docker).
+ */
 class MailerService
 {
     public function __construct(

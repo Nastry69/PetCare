@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
+/** Gestion du référentiel de types d'événements — préfixe /api/type-evenements. Pas d'auth requise en lecture. */
 #[Route('/api/type-evenements')]
 class TypeEvenementController extends AbstractController
 {

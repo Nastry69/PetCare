@@ -11,6 +11,10 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * CRUD des événements — préfixe /api/evenements, JWT requis.
+ * L'accès en écriture est contrôlé par canUserWriteAnimal() (propriétaire ou partage "ecriture").
+ */
 #[Route('/api/evenements')]
 class EvenementController extends AbstractController
 {

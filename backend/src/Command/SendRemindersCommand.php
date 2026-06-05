@@ -11,6 +11,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+/**
+ * Commande CLI pour tester les rappels sans attendre le scheduler.
+ * Usage : docker compose exec app php bin/console app:send-reminders
+ */
 #[AsCommand(name: 'app:send-reminders', description: 'Envoie les rappels email du jour (événements dans rappelJoursAvant jours)')]
 class SendRemindersCommand extends Command
 {

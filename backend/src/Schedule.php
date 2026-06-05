@@ -9,6 +9,10 @@ use Symfony\Component\Scheduler\Schedule as SymfonySchedule;
 use Symfony\Component\Scheduler\ScheduleProviderInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
+/**
+ * Planificateur Symfony — déclenche DailyReminderMessage tous les jours à 8h (CRON "0 8 * * *").
+ * stateful() + processOnlyLastMissedRun() évitent les envois multiples si le worker a été arrêté.
+ */
 #[AsSchedule]
 class Schedule implements ScheduleProviderInterface
 {
@@ -22,7 +26,7 @@ class Schedule implements ScheduleProviderInterface
             ->stateful($this->cache)
             ->processOnlyLastMissedRun(true)
             ->add(
-                RecurringMessage::cron('* * * * *', new DailyReminderMessage())
+                RecurringMessage::cron('0 8 * * *', new DailyReminderMessage())
             );
     }
 }

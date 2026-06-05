@@ -6,12 +6,17 @@ use App\Entity\User;
 use App\Repository\AnimalRepository;
 use App\Repository\PartageAnimalRepository;
 use App\Repository\UserRepository;
+use App\Service\MailerService;
 use App\Service\PartageAnimalService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Gestion des partages d'animaux — préfixe /api/partages, JWT requis.
+ * Création réservée au propriétaire ; suppression autorisée au propriétaire ET à l'invité (quitter).
+ */
 #[Route('/api/partages')]
 class PartageAnimalController extends AbstractController
 {
@@ -54,7 +59,8 @@ class PartageAnimalController extends AbstractController
         AnimalRepository $animalRepository,
         UserRepository $userRepository,
         PartageAnimalRepository $partageAnimalRepository,
-        PartageAnimalService $partageAnimalService
+        PartageAnimalService $partageAnimalService,
+        MailerService $mailerService
     ): JsonResponse {
         /** @var User $user */
         $user = $this->getUser();
@@ -92,10 +98,16 @@ class PartageAnimalController extends AbstractController
                 'utilisateur_id' => $invitedUser->getId(),
                 'rolePartage' => $data['rolePartage'],
             ]);
-            return $this->json($this->serialize($partage), 201);
         } catch (\RuntimeException $e) {
             return $this->json(['message' => $e->getMessage()], 409);
         }
+
+        // Email d'invitation (non bloquant)
+        try {
+            $mailerService->sendInvitationEmail($invitedUser, $user, $animal->getNom(), $data['rolePartage']);
+        } catch (\Throwable) {}
+
+        return $this->json($this->serialize($partage), 201);
     }
 
     #[Route('/{id}', name: 'partage_update', methods: ['PUT', 'PATCH'])]
@@ -145,13 +157,17 @@ class PartageAnimalController extends AbstractController
             return $this->json(['message' => 'Partage introuvable.'], 404);
         }
 
-        if ($partage->getAnimal()->getProprietaire() !== $user) {
+        $isOwner  = $partage->getAnimal()->getProprietaire() === $user;
+        $isInvite = $partage->getUtilisateur() === $user;
+
+        if (!$isOwner && !$isInvite) {
             return $this->json(['message' => 'Accès refusé.'], 403);
         }
 
         try {
             $partageAnimalService->delete($id);
-            return $this->json(['message' => 'Partage supprimé avec succès.']);
+            $message = $isInvite && !$isOwner ? 'Vous avez quitté ce partage.' : 'Partage supprimé avec succès.';
+            return $this->json(['message' => $message]);
         } catch (\RuntimeException $e) {
             return $this->json(['message' => $e->getMessage()], 400);
         }

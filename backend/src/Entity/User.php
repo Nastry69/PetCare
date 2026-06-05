@@ -9,6 +9,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
+/** Utilisateur authentifié — implémente UserInterface (JWT) et PasswordAuthenticatedUserInterface (bcrypt). */
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
@@ -39,6 +40,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 500, nullable: true)]
     private ?string $photoUrl = null;
 
+    /** Token hex-64 pour la réinitialisation de mot de passe (valide 1 h, null si aucune demande en cours). */
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $resetToken = null;
 

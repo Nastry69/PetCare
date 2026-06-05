@@ -10,6 +10,7 @@ use App\Repository\PartageAnimalRepository;
 use App\Repository\TypeEvenementRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
+/** Logique métier CRUD des événements — vérifie les droits d'écriture via PartageAnimalRepository. */
 class EvenementService
 {
     public function __construct(

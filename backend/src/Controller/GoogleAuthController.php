@@ -15,6 +15,10 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 
+/**
+ * Connexion OAuth2 Google — redirige vers Google puis génère un JWT au retour.
+ * Un nouveau compte est créé automatiquement si l'email Google est inconnu.
+ */
 class GoogleAuthController extends AbstractController
 {
     public function __construct(

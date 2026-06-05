@@ -134,7 +134,7 @@ function Animals() {
         <p className="mt-12 text-center text-[#94A3B8]">Chargement…</p>
       ) : (
         <>
-          <section className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <section className="mt-8 grid grid-cols-2 gap-6 xl:grid-cols-3">
             {animals.map((animal) => (
               <AnimalCard key={animal.id} animal={animal} onRefresh={load} />
             ))}
@@ -164,9 +164,9 @@ function AnimalCard({ animal, onRefresh }) {
 
   return (
     <div className="overflow-hidden rounded-[18px] border border-[#E5EAF3] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="relative h-[200px] w-full overflow-hidden bg-[#EAF3FF]">
+      <div className="relative aspect-square w-full overflow-hidden bg-[#EAF3FF]">
         {animal.photoUrl ? (
-          <img src={animal.photoUrl} alt={animal.nom} className="h-full w-full object-cover" />
+          <img src={animal.photoUrl} alt={animal.nom} className="h-full w-full object-contain" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-[64px]">🐾</div>
         )}

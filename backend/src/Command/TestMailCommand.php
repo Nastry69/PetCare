@@ -12,6 +12,10 @@ use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
+/**
+ * Commande CLI pour vérifier la configuration SMTP (Brevo ou Mailpit).
+ * Usage : docker compose exec app php bin/console app:test-mail destinataire@email.com
+ */
 #[AsCommand(name: 'app:test-mail', description: 'Envoie un email de test pour vérifier la config Brevo')]
 class TestMailCommand extends Command
 {

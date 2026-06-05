@@ -6,6 +6,7 @@ use App\Repository\EvenementRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+/** Événement lié à un animal (visite vét., vaccin, traitement…) avec système de rappel email. */
 #[ORM\Entity(repositoryClass: EvenementRepository::class)]
 class Evenement
 {
@@ -26,6 +27,7 @@ class Evenement
     #[ORM\Column]
     private ?bool $rappelActif = null;
 
+    /** Passe à true après l'envoi du rappel ; remis à false si la date ou le délai change. */
     #[ORM\Column(options: ['default' => false])]
     private bool $rappelEnvoye = false;
 

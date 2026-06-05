@@ -9,6 +9,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
+ * Requêtes Doctrine pour PartageAnimal — contient le contrôle d'accès écriture utilisé par EvenementService.
  * @extends ServiceEntityRepository<PartageAnimal>
  */
 class PartageAnimalRepository extends ServiceEntityRepository
@@ -35,6 +36,7 @@ class PartageAnimalRepository extends ServiceEntityRepository
         return $this->findOneBy(['animal' => $animal, 'utilisateur' => $utilisateur]);
     }
 
+    /** Retourne true si l'utilisateur est propriétaire ou a un partage avec rôle "ecriture". Utilisé par EvenementService. */
     public function canUserWriteAnimal(Animal $animal, User $user): bool
     {
         if ($animal->getProprietaire() === $user) {

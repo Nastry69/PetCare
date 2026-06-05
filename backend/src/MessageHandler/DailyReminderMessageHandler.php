@@ -8,6 +8,10 @@ use App\Service\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
+/**
+ * Traite DailyReminderMessage : envoie les rappels email du jour et marque rappelEnvoye=true.
+ * Le flush est fait une seule fois après la boucle pour optimiser les requêtes BDD.
+ */
 #[AsMessageHandler]
 final class DailyReminderMessageHandler
 {

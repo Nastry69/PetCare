@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+/** Animal appartenant à un utilisateur, partageable avec d'autres via PartageAnimal. */
 #[ORM\Entity(repositoryClass: AnimalRepository::class)]
 class Animal
 {
@@ -31,9 +32,11 @@ class Animal
     #[ORM\Column(length: 20, nullable: true)]
     private ?string $sexe = null;
 
+    /** URL absolue vers /public/uploads/animals/. */
     #[ORM\Column(length: 255, nullable: true)]
     private ?string $photoUrl = null;
 
+    /** Seul le propriétaire peut modifier ou partager cet animal. */
     #[ORM\ManyToOne(inversedBy: 'animals')]
     #[ORM\JoinColumn(nullable: false)]
     private ?User $proprietaire = null;

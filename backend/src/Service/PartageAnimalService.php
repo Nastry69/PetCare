@@ -8,6 +8,7 @@ use App\Repository\PartageAnimalRepository;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
+/** Logique métier des partages — création (vérifie doublon), mise à jour du rôle et suppression. */
 class PartageAnimalService
 {
     public function __construct(

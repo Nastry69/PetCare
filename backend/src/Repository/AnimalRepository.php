@@ -8,6 +8,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
+ * Requêtes Doctrine pour Animal — gestion des accès propriétaire et partagé.
  * @extends ServiceEntityRepository<Animal>
  */
 class AnimalRepository extends ServiceEntityRepository

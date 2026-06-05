@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\PartageAnimalRepository;
 use Doctrine\ORM\Mapping as ORM;
 
+/** Accès partagé d'un utilisateur invité à un animal (lecture ou écriture). */
 #[ORM\Entity(repositoryClass: PartageAnimalRepository::class)]
 class PartageAnimal
 {

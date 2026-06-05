@@ -16,6 +16,11 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
+/**
+ * Gestion des comptes et de l'authentification — préfixe /api.
+ * Routes publiques : register, login, forgot/reset-password.
+ * Routes JWT : /me (GET/PUT/DELETE/export/photo).
+ */
 #[Route('/api')]
 class SecurityController extends AbstractController
 {

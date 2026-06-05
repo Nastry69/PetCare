@@ -2,10 +2,11 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   CalendarDays, Camera, Pencil, Syringe, Pill, Scissors,
-  Stethoscope, Save, X, UserPlus, Users,
+  Stethoscope, Save, X, UserPlus, Users, Info,
 } from "lucide-react";
 import api from "../api/axios";
 import { useAuth } from "../context/AuthContext";
+import Tooltip from "../components/Tooltip";
 
 const typeIcons = {
   Vaccin: Syringe,
@@ -33,6 +34,8 @@ function AnimalDetail() {
   const [photoUploading, setPhotoUploading] = useState(false);
   const [error, setError] = useState("");
   const photoInputRef = useRef(null);
+
+  const [userRole, setUserRole] = useState(null);
 
   const [partages, setPartages] = useState([]);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -153,6 +156,18 @@ function AnimalDetail() {
     }
   };
 
+  // Récupère le rôle de l'utilisateur courant sur cet animal (si non-propriétaire)
+  useEffect(() => {
+    if (!animal || !user) return;
+    if (animal.proprietaireId === user.id) return;
+    api.get("/partages")
+      .then((res) => {
+        const mine = res.data.find((p) => p.animal.id === animal.id);
+        if (mine) setUserRole(mine.rolePartage);
+      })
+      .catch(() => {});
+  }, [animal?.id, user?.id]);
+
   if (loading) {
     return <div className="flex items-center justify-center py-20 text-[#64748B]">Chargement…</div>;
   }
@@ -178,7 +193,7 @@ function AnimalDetail() {
               title="Changer la photo"
             >
               {animal.photoUrl ? (
-                <img src={animal.photoUrl} alt={animal.nom} className="h-full w-full object-cover" />
+                <img src={animal.photoUrl} alt={animal.nom} className="h-full w-full object-contain" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center text-[64px]">🐾</div>
               )}
@@ -346,12 +361,24 @@ function AnimalDetail() {
 
       {/* ── Action buttons ── */}
       <section className="mt-10 flex flex-wrap gap-3">
-        <Link
-          to={`/events/new?animalId=${id}`}
-          className="flex h-[56px] items-center justify-center gap-2 rounded-[12px] bg-[#1377EC] px-6 text-[16px] font-semibold text-white shadow-[0_6px_18px_rgba(19,119,236,0.25)] transition hover:bg-[#0E68D0]"
-        >
-          <CalendarDays size={18} />Ajouter un événement
-        </Link>
+        {!isOwner && userRole === "lecture" ? (
+          <Tooltip text="Demandez au propriétaire de passer votre accès en Écriture">
+            <button
+              disabled
+              className="flex h-[56px] cursor-not-allowed items-center justify-center gap-2 rounded-[12px] bg-[#94A3B8] px-6 text-[16px] font-semibold text-white opacity-60"
+            >
+              <CalendarDays size={18} />Ajouter un événement
+              <Info size={14} />
+            </button>
+          </Tooltip>
+        ) : (
+          <Link
+            to={`/events/new?animalId=${id}`}
+            className="flex h-[56px] items-center justify-center gap-2 rounded-[12px] bg-[#1377EC] px-6 text-[16px] font-semibold text-white shadow-[0_6px_18px_rgba(19,119,236,0.25)] transition hover:bg-[#0E68D0]"
+          >
+            <CalendarDays size={18} />Ajouter un événement
+          </Link>
+        )}
 
         {isOwner && !editing && (
           <button

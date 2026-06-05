@@ -9,6 +9,7 @@ use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
+ * Requêtes Doctrine pour Evenement — inclut la logique de sélection des rappels du jour.
  * @extends ServiceEntityRepository<Evenement>
  */
 class EvenementRepository extends ServiceEntityRepository
@@ -54,14 +55,13 @@ class EvenementRepository extends ServiceEntityRepository
     }
 
     /**
-     * Retourne les événements dont le rappel doit être envoyé maintenant.
+     * Retourne les événements dont le rappel doit être envoyé aujourd'hui.
      *
-     * Logique : le rappel se déclenche exactement N jours avant l'heure du RDV.
-     * Ex. RDV le 30/05 à 12h00 avec rappelJoursAvant=2 → email envoyé le 28/05 à 12h00.
-     *
-     * Le scheduler appelle cette méthode chaque minute ; on utilise une fenêtre
-     * d'une minute pour ne pas manquer le créneau, et rappelEnvoye=false pour
-     * éviter les doublons.
+     * Logique : le rappel se déclenche N jours avant la DATE du RDV (sans tenir
+     * compte de l'heure). Le scheduler tourne chaque matin à 8h ; on compare
+     * uniquement la date pour éviter tout problème de timezone ou de décalage
+     * à la minute.
+     * Ex. RDV le 30/05 avec rappelJoursAvant=2 → email envoyé le 28/05 à 8h.
      *
      * @return Evenement[]
      */
@@ -78,25 +78,19 @@ class EvenementRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
 
-        // Fenêtre courante : minute actuelle (ex. 12:03:00 → 12:04:00)
-        $now         = new \DateTime();
-        $windowStart = (clone $now)->setTime((int) $now->format('H'), (int) $now->format('i'), 0);
-        $windowEnd   = (clone $windowStart)->modify('+1 minute');
+        // Comparaison sur la date uniquement (minuit → minuit suivant)
+        $today    = (new \DateTime())->setTime(0, 0, 0);
+        $tomorrow = (clone $today)->modify('+1 day');
 
         return array_values(array_filter(
             $candidates,
-            static function (Evenement $e) use ($windowStart, $windowEnd): bool {
+            static function (Evenement $e) use ($today, $tomorrow): bool {
                 $joursAvant   = $e->getRappelJoursAvant() ?? 1;
-                // Heure cible = heure du RDV moins N jours, secondes ignorées
-                $reminderTime = (clone $e->getDateHeureEvenement())
+                $reminderDate = (clone $e->getDateHeureEvenement())
                     ->modify("-{$joursAvant} days")
-                    ->setTime(
-                        (int) $e->getDateHeureEvenement()->format('H'),
-                        (int) $e->getDateHeureEvenement()->format('i'),
-                        0
-                    );
+                    ->setTime(0, 0, 0);
 
-                return $reminderTime >= $windowStart && $reminderTime < $windowEnd;
+                return $reminderDate >= $today && $reminderDate < $tomorrow;
             }
         ));
     }

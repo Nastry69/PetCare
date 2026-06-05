@@ -10,6 +10,7 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
 
 /**
+ * Requêtes Doctrine pour User — implémente PasswordUpgraderInterface pour la mise à jour automatique du hash.
  * @extends ServiceEntityRepository<User>
  */
 class UserRepository extends ServiceEntityRepository implements PasswordUpgraderInterface

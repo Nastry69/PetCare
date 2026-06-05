@@ -8,6 +8,7 @@ use App\Repository\AnimalRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
+/** Logique métier CRUD des animaux — création, mise à jour, suppression et sérialisation JSON. */
 class AnimalService
 {
     public function __construct(
