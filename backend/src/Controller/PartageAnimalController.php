@@ -147,7 +147,9 @@ class PartageAnimalController extends AbstractController
 
         try {
             $mailerService->sendInvitationEmailToNewUser($emailInvite, $user, $animal->getNom(), $data['rolePartage'], $token);
-        } catch (\Throwable) {}
+        } catch (\Throwable $e) {
+            error_log('MAILER ERROR: ' . $e->getMessage());
+        }
 
         return $this->json([
             'message' => "Aucun compte trouvé pour cet email. Un email d'invitation a été envoyé.",
