@@ -147,5 +147,5 @@ else
     echo ""
     echo "🚀  Démarrage PHP-FPM..."
     echo ""
-    exec php-fpm
+    exec php -S 0.0.0.0:10000 -t public/
 fi
