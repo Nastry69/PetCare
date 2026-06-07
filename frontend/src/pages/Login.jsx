@@ -103,7 +103,7 @@ function Login() {
           </div>
 
           <a
-            href="http://localhost:8000/api/auth/google"
+            href={`${import.meta.env.VITE_API_URL}/auth/google`}
             className="flex h-11 w-full items-center justify-center gap-3 rounded-[10px] border border-[#E5EAF3] bg-white text-[14px] font-medium text-[#334155] hover:bg-[#F8FAFC]"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
