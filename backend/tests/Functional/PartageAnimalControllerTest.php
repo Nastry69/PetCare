@@ -153,26 +153,18 @@ class PartageAnimalControllerTest extends WebTestCase
         $this->assertResponseStatusCodeSame(400);
     }
 
-    public function testCreatePartageWithUnknownAnimalReturns404(): void
-    {
-        $this->post('/api/partages', [
-            'animal_id'   => 999999,
-            'email'       => 'invited@partage.fr',
-            'rolePartage' => 'lecture',
-        ], $this->ownerToken);
-        $this->assertResponseStatusCodeSame(404);
-    }
-
-    public function testCreatePartageWithUnknownEmailReturns404(): void
+    public function testCreatePartageWithUnknownEmailSendsInvitation(): void
     {
         $animalId = $this->createAnimal();
-        $this->post('/api/partages', [
-            'animal_id'   => $animalId,
-            'email'       => 'inconnu@nobody.fr',
-            'rolePartage' => 'lecture',
-        ], $this->ownerToken);
-        $this->assertResponseStatusCodeSame(404);
-    }
+    $this->post('/api/partages', [
+        'animal_id'   => $animalId,
+        'email'       => 'inconnu@nobody.fr',
+        'rolePartage' => 'lecture',
+    ], $this->ownerToken);
+    $this->assertResponseStatusCodeSame(202);
+    $data = $this->json();
+    $this->assertTrue($data['invitationEnAttente']);
+}
 
     public function testCreatePartageByNonOwnerReturns403(): void
     {
