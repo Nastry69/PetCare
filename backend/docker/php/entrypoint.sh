@@ -91,8 +91,8 @@ if [ "$WORKER_MODE" = "0" ]; then
     fi
 
     if [ "$DB_INITIALIZED" = "false" ]; then
-        echo "📦  Première installation — création du schéma depuis les entités..."
-        php bin/console doctrine:schema:create --no-interaction --env="${APP_ENV}"
+    echo "📦  Première installation — création du schéma depuis les entités..."
+    php bin/console doctrine:schema:create --no-interaction --env="${APP_ENV}" 2>/dev/null || echo "⚠️  Schéma déjà existant, on continue..."
 
         echo "🔖  Initialisation de la table de suivi des migrations..."
         php bin/console doctrine:migrations:sync-metadata-storage \
