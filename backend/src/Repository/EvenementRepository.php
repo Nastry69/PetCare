@@ -70,6 +70,8 @@ class EvenementRepository extends ServiceEntityRepository
         $now = new \DateTime();
         $inFiveMinutes = (clone $now)->modify('+5 minutes');
 
+        error_log('REMINDER CHECK - now: ' . $now->format('Y-m-d H:i:s') . ' inFive: ' . $inFiveMinutes->format('Y-m-d H:i:s'));
+
         $candidates = $this->createQueryBuilder('e')
             ->where('e.rappelActif = true')
             ->andWhere('e.rappelEnvoye = false')
@@ -79,6 +81,14 @@ class EvenementRepository extends ServiceEntityRepository
             ->setParameter('now', $now)
             ->getQuery()
             ->getResult();
+
+        error_log('REMINDER CANDIDATES: ' . count($candidates));
+
+        foreach ($candidates as $e) {
+            $joursAvant = $e->getRappelJoursAvant() ?? 1;
+            $reminderDateTime = (clone $e->getDateHeureEvenement())->modify("-{$joursAvant} days");
+            error_log('Event: ' . $e->getDateHeureEvenement()->format('Y-m-d H:i:s') . ' reminderAt: ' . $reminderDateTime->format('Y-m-d H:i:s'));
+        }
 
         return array_values(array_filter(
             $candidates,
