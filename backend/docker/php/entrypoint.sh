@@ -103,7 +103,8 @@ if [ "$WORKER_MODE" = "0" ]; then
             'DoctrineMigrations\Version20260327142751' \
             'DoctrineMigrations\Version20260502000001' \
             'DoctrineMigrations\Version20260526000001' \
-            'DoctrineMigrations\Version20260526000003'; do
+            'DoctrineMigrations\Version20260526000003' \
+            'DoctrineMigrations\Version20260607000001'; do
             php bin/console doctrine:migrations:version \
                 "$version" --add --no-interaction --env="${APP_ENV}" || true
         done

@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\PartageAnimal;
 use App\Entity\User;
+use App\Repository\InvitationEnAttenteRepository;
 use App\Repository\UserRepository;
 use App\Service\MailerService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -41,6 +43,7 @@ class GoogleAuthController extends AbstractController
     public function googleCallback(
         ClientRegistry $clientRegistry,
         UserRepository $userRepository,
+        InvitationEnAttenteRepository $invitationRepository,
         EntityManagerInterface $em,
         JWTTokenManagerInterface $jwtManager,
         UserPasswordHasherInterface $hasher,
@@ -69,7 +72,29 @@ class GoogleAuthController extends AbstractController
                 $em->persist($user);
                 $em->flush();
 
-                // Email de bienvenue pour les nouveaux comptes Google (non bloquant)
+                // Applique les invitations en attente pour cet email
+                $invitations = $invitationRepository->findByEmail($email);
+                foreach ($invitations as $invitation) {
+                    if ($invitation->isExpired()) {
+                        $em->remove($invitation);
+                        continue;
+                    }
+                    $existant = $em->getRepository(PartageAnimal::class)->findOneBy([
+                        'animal' => $invitation->getAnimal(),
+                        'utilisateur' => $user,
+                    ]);
+                    if (!$existant) {
+                        $partage = new PartageAnimal();
+                        $partage->setAnimal($invitation->getAnimal());
+                        $partage->setUtilisateur($user);
+                        $partage->setRolePartage($invitation->getRolePartage());
+                        $partage->setDateInvitation(new \DateTime());
+                        $em->persist($partage);
+                    }
+                    $em->remove($invitation);
+                }
+                $em->flush();
+
                 try {
                     $mailerService->sendWelcomeEmail($user);
                 } catch (\Throwable) {}

@@ -281,7 +281,84 @@ class MailerService
         $this->mailer->send($email);
     }
 
-    // ── Email d'invitation (partage) ─────────────────────────────────────────
+    // ── Email d'invitation vers un email sans compte ─────────────────────────
+
+    public function sendInvitationEmailToNewUser(string $email, User $owner, string $animalNom, string $role, string $token): void
+    {
+        $ownerNom   = htmlspecialchars($owner->getPrenom() . ' ' . $owner->getNom());
+        $animal     = htmlspecialchars($animalNom);
+        $roleLabel  = $role === 'ecriture' ? 'Lecture & Écriture' : 'Lecture seule';
+        $registerUrl = $this->frontendUrl . '/register?invitation=' . urlencode($token);
+
+        $html = <<<HTML
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+        <body style="margin:0;padding:0;background:#F1F5F9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+          <div style="max-width:560px;margin:40px auto;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.08)">
+
+            <!-- Header -->
+            <div style="background:linear-gradient(135deg,#2A8BF2 0%,#1377EC 100%);padding:40px 40px 36px;text-align:center">
+              <div style="display:inline-flex;align-items:center;justify-content:center;width:64px;height:64px;border-radius:50%;background:#ffffff;margin-bottom:14px;font-size:32px;box-shadow:0 4px 16px rgba(0,0,0,0.15)">🐾</div>
+              <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:800;text-shadow:0 1px 4px rgba(0,0,0,0.15)">Partage d'animal</h1>
+              <p style="margin:8px 0 0;color:rgba(255,255,255,0.9);font-size:14px">{$ownerNom} vous invite sur PetCare</p>
+            </div>
+
+            <!-- Body -->
+            <div style="padding:40px">
+              <p style="margin:0 0 20px;color:#475569;font-size:15px;line-height:1.6">Bonjour,</p>
+              <p style="margin:0 0 28px;color:#475569;font-size:15px;line-height:1.6">
+                <strong style="color:#1377EC">{$ownerNom}</strong> souhaite vous partager l'accès à <strong style="color:#0F172A">{$animal}</strong> sur PetCare.
+              </p>
+
+              <!-- Role badge -->
+              <div style="background:#EAF3FF;border-radius:12px;padding:16px 20px;margin-bottom:24px;text-align:center">
+                <p style="margin:0 0 4px;color:#64748B;font-size:12px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600">Votre rôle</p>
+                <p style="margin:0;color:#1377EC;font-size:18px;font-weight:800">{$roleLabel}</p>
+              </div>
+
+              <!-- Info box -->
+              <div style="background:#FFF4E5;border-radius:12px;padding:16px 20px;margin-bottom:28px;border-left:4px solid #F59E0B">
+                <p style="margin:0;color:#92400E;font-size:13px;line-height:1.5">
+                  ⏰ <strong>Ce lien est valable 48 heures.</strong><br>
+                  Créez votre compte gratuit PetCare pour accepter l'invitation.
+                </p>
+              </div>
+
+              <!-- CTA -->
+              <div style="text-align:center">
+                <a href="{$registerUrl}"
+                   style="display:inline-block;background:#1377EC;color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:12px;font-size:15px;font-weight:700">
+                  Créer mon compte et accepter →
+                </a>
+              </div>
+              <p style="margin:16px 0 0;color:#94A3B8;font-size:12px;text-align:center;word-break:break-all">
+                Si le bouton ne fonctionne pas : <span style="color:#1377EC">{$registerUrl}</span>
+              </p>
+            </div>
+
+            <!-- Footer -->
+            <div style="background:#F8FAFC;padding:20px 40px;text-align:center;border-top:1px solid #E2E8F0">
+              <p style="margin:0;color:#94A3B8;font-size:12px">
+                PetCare · Votre gestionnaire d'animaux de compagnie
+              </p>
+            </div>
+
+          </div>
+        </body>
+        </html>
+        HTML;
+
+        $email_obj = (new Email())
+            ->from(sprintf('%s <%s>', $this->fromName, $this->fromEmail))
+            ->to($email)
+            ->subject(sprintf('🐾 %s vous partage l\'accès à %s sur PetCare', $owner->getPrenom(), $animalNom))
+            ->html($html);
+
+        $this->mailer->send($email_obj);
+    }
+
+    // ── Email d'invitation (partage — utilisateur existant) ──────────────────
 
     public function sendInvitationEmail(User $invitedUser, User $owner, string $animalNom, string $role): void
     {

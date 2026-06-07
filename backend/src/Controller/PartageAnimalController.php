@@ -2,12 +2,15 @@
 
 namespace App\Controller;
 
+use App\Entity\InvitationEnAttente;
 use App\Entity\User;
 use App\Repository\AnimalRepository;
+use App\Repository\InvitationEnAttenteRepository;
 use App\Repository\PartageAnimalRepository;
 use App\Repository\UserRepository;
 use App\Service\MailerService;
 use App\Service\PartageAnimalService;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -59,8 +62,10 @@ class PartageAnimalController extends AbstractController
         AnimalRepository $animalRepository,
         UserRepository $userRepository,
         PartageAnimalRepository $partageAnimalRepository,
+        InvitationEnAttenteRepository $invitationRepository,
         PartageAnimalService $partageAnimalService,
-        MailerService $mailerService
+        MailerService $mailerService,
+        EntityManagerInterface $em
     ): JsonResponse {
         /** @var User $user */
         $user = $this->getUser();
@@ -79,35 +84,75 @@ class PartageAnimalController extends AbstractController
             return $this->json(['message' => 'Accès refusé. Seul le propriétaire peut partager cet animal.'], 403);
         }
 
-        $invitedUser = $userRepository->findByEmail($data['email']);
-        if (!$invitedUser) {
-            return $this->json(['message' => 'Aucun compte trouvé avec cet email.'], 404);
-        }
-
-        if ($invitedUser === $user) {
-            return $this->json(['message' => 'Vous ne pouvez pas partager un animal avec vous-même.'], 400);
-        }
-
         if (!in_array($data['rolePartage'], ['lecture', 'ecriture'], true)) {
             return $this->json(['message' => 'Le rôle doit être "lecture" ou "ecriture".'], 400);
         }
 
-        try {
-            $partage = $partageAnimalService->create([
-                'animal_id' => $data['animal_id'],
-                'utilisateur_id' => $invitedUser->getId(),
-                'rolePartage' => $data['rolePartage'],
-            ]);
-        } catch (\RuntimeException $e) {
-            return $this->json(['message' => $e->getMessage()], 409);
+        $emailInvite = strtolower(trim($data['email']));
+
+        // Cas 1 — la personne a déjà un compte
+        $invitedUser = $userRepository->findByEmail($emailInvite);
+
+        if ($invitedUser) {
+            if ($invitedUser === $user) {
+                return $this->json(['message' => 'Vous ne pouvez pas partager un animal avec vous-même.'], 400);
+            }
+
+            try {
+                $partage = $partageAnimalService->create([
+                    'animal_id' => $data['animal_id'],
+                    'utilisateur_id' => $invitedUser->getId(),
+                    'rolePartage' => $data['rolePartage'],
+                ]);
+            } catch (\RuntimeException $e) {
+                return $this->json(['message' => $e->getMessage()], 409);
+            }
+
+            try {
+                $mailerService->sendInvitationEmail($invitedUser, $user, $animal->getNom(), $data['rolePartage']);
+            } catch (\Throwable) {}
+
+            return $this->json($this->serialize($partage), 201);
         }
 
-        // Email d'invitation (non bloquant)
+        // Cas 2 — pas de compte : on crée une invitation en attente
+        if ($emailInvite === strtolower(trim($user->getEmail()))) {
+            return $this->json(['message' => 'Vous ne pouvez pas partager un animal avec vous-même.'], 400);
+        }
+
+        // Vérifie si une invitation en attente existe déjà pour cet email + animal
+        $existante = $invitationRepository->createQueryBuilder('i')
+            ->where('i.email = :email')
+            ->andWhere('i.animal = :animal')
+            ->setParameter('email', $emailInvite)
+            ->setParameter('animal', $animal)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if ($existante) {
+            return $this->json(['message' => 'Une invitation est déjà en attente pour cet email.'], 409);
+        }
+
+        $token = bin2hex(random_bytes(32));
+
+        $invitation = new InvitationEnAttente();
+        $invitation->setEmail($emailInvite);
+        $invitation->setRolePartage($data['rolePartage']);
+        $invitation->setToken($token);
+        $invitation->setExpiresAt(new \DateTimeImmutable('+48 hours'));
+        $invitation->setAnimal($animal);
+
+        $em->persist($invitation);
+        $em->flush();
+
         try {
-            $mailerService->sendInvitationEmail($invitedUser, $user, $animal->getNom(), $data['rolePartage']);
+            $mailerService->sendInvitationEmailToNewUser($emailInvite, $user, $animal->getNom(), $data['rolePartage'], $token);
         } catch (\Throwable) {}
 
-        return $this->json($this->serialize($partage), 201);
+        return $this->json([
+            'message' => "Aucun compte trouvé pour cet email. Un email d'invitation a été envoyé.",
+            'invitationEnAttente' => true,
+        ], 202);
     }
 
     #[Route('/{id}', name: 'partage_update', methods: ['PUT', 'PATCH'])]

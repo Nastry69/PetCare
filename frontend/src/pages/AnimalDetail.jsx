@@ -126,9 +126,13 @@ function AnimalDetail() {
         email: inviteEmail,
         rolePartage: inviteRole,
       });
-      setPartages((prev) => [...prev, res.data]);
       setInviteEmail("");
-      setPartageSuccess(`${res.data.utilisateur.prenom} ${res.data.utilisateur.nom} a bien été invité(e).`);
+      if (res.status === 202 || res.data.invitationEnAttente) {
+        setPartageSuccess(`Aucun compte PetCare pour cet email. Un email d'invitation a été envoyé — l'accès sera activé dès son inscription.`);
+      } else {
+        setPartages((prev) => [...prev, res.data]);
+        setPartageSuccess(`${res.data.utilisateur.prenom} ${res.data.utilisateur.nom} a bien été invité(e).`);
+      }
     } catch (err) {
       setPartageError(err.response?.data?.message || "Erreur lors de l'invitation.");
     } finally {
@@ -486,7 +490,7 @@ function AnimalDetail() {
               </button>
             </form>
             <p className="mt-2 text-[11px] text-[#94A3B8]">
-              La personne doit avoir un compte PetCare.
+              Si la personne n'a pas de compte, elle recevra un email pour s'inscrire et l'accès sera activé automatiquement.
               <strong className="font-semibold text-[#64748B]"> Lecture</strong> = consulter ;
               <strong className="font-semibold text-[#64748B]"> Écriture</strong> = gérer les événements (pas supprimer l'animal).
             </p>

@@ -1,10 +1,12 @@
 ﻿import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const invitationToken = searchParams.get("invitation");
 
   const [form, setForm] = useState({ nom: "", prenom: "", email: "", password: "", confirm: "" });
   const [error, setError] = useState("");
@@ -28,7 +30,7 @@ function Register() {
     setLoading(true);
     try {
       await register(form.nom, form.prenom, form.email, form.password);
-      navigate("/dashboard");
+      navigate(invitationToken ? "/animals" : "/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Une erreur est survenue lors de l'inscription.");
     } finally {
@@ -50,6 +52,13 @@ function Register() {
           <h1 className="mt-3 text-[22px] font-bold text-[#0F172A]">PetCare</h1>
           <p className="mt-1 text-[14px] text-[#64748B]">Créez votre compte gratuitement</p>
         </div>
+
+        {invitationToken && (
+          <div className="mb-4 rounded-[12px] bg-[#EAF3FF] border border-[#B8D9FF] px-4 py-3 text-[13px] text-[#1377EC]">
+            <p className="font-semibold">Vous avez été invité(e) sur PetCare !</p>
+            <p className="mt-1 text-[#475569]">Créez votre compte avec <strong>la même adresse email</strong> que celle de l'invitation pour accepter automatiquement l'accès partagé.</p>
+          </div>
+        )}
 
         <div className="rounded-[18px] border border-[#E5EAF3] bg-white p-8 shadow-sm">
           {error && (
