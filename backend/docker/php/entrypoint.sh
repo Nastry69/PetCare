@@ -61,8 +61,9 @@ chmod 777 /app/config/jwt/public.pem  2>/dev/null || true
 # ── 2. Permissions dossiers d'upload ────────────────────────────
 echo ""
 echo "📁  Initialisation des dossiers d'upload..."
-mkdir -p /app/public/uploads/animals /app/public/uploads/users
+mkdir -p /app/public/uploads/animals /app/public/uploads/users /app/var/log
 chmod -R 777 /app/public/uploads
+chmod -R 777 /app/var/log
 echo "✅  Dossiers d'upload prêts."
 
 if [ "$WORKER_MODE" = "0" ]; then
