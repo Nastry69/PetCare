@@ -26,7 +26,7 @@ class Schedule implements ScheduleProviderInterface
             ->stateful($this->cache)
             ->processOnlyLastMissedRun(true)
             ->add(
-                RecurringMessage::cron('0 8 * * *', new DailyReminderMessage())
+                RecurringMessage::cron('* * * * *', new DailyReminderMessage())
             );
     }
 }

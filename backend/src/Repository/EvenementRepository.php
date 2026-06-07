@@ -67,30 +67,27 @@ class EvenementRepository extends ServiceEntityRepository
      */
     public function findRappelsDuJour(): array
     {
-        // Candidats : rappel actif, pas encore envoyé, événement dans le futur
+        $now = new \DateTime();
+        $inFiveMinutes = (clone $now)->modify('+5 minutes');
+
         $candidates = $this->createQueryBuilder('e')
             ->where('e.rappelActif = true')
             ->andWhere('e.rappelEnvoye = false')
             ->andWhere('e.statut != :annule')
             ->andWhere('e.dateHeureEvenement > :now')
             ->setParameter('annule', 'annule')
-            ->setParameter('now', new \DateTime())
+            ->setParameter('now', $now)
             ->getQuery()
             ->getResult();
 
-        // Comparaison sur la date uniquement (minuit → minuit suivant)
-        $today    = (new \DateTime())->setTime(0, 0, 0);
-        $tomorrow = (clone $today)->modify('+1 day');
-
         return array_values(array_filter(
             $candidates,
-            static function (Evenement $e) use ($today, $tomorrow): bool {
-                $joursAvant   = $e->getRappelJoursAvant() ?? 1;
-                $reminderDate = (clone $e->getDateHeureEvenement())
-                    ->modify("-{$joursAvant} days")
-                    ->setTime(0, 0, 0);
+            static function (Evenement $e) use ($now, $inFiveMinutes): bool {
+                $joursAvant = $e->getRappelJoursAvant() ?? 1;
+                $reminderDateTime = (clone $e->getDateHeureEvenement())
+                    ->modify("-{$joursAvant} days");
 
-                return $reminderDate >= $today && $reminderDate < $tomorrow;
+                return $reminderDateTime >= $now && $reminderDateTime < $inFiveMinutes;
             }
         ));
     }
