@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="tests/bootstrap.php"
+         colors="true"
+         failOnWarning="false"
+         failOnDeprecation="false"
+         failOnPhpunitDeprecation="false"
+         failOnNotice="false"
+         failOnRisky="false"
+>
+    <php>
+        <ini name="display_errors" value="1" />
+        <ini name="error_reporting" value="-1" />
+        <server name="APP_ENV" value="test" force="true" />
+        <server name="SHELL_VERBOSITY" value="-1" />
+        <server name="KERNEL_CLASS" value="App\Kernel" />
+        <env name="DATABASE_URL" value="sqlite:///var/test.db" force="true" />
+        <env name="DEFAULT_URI" value="http://localhost" force="true" />
+        <!-- Désactive le gestionnaire de dépréciations du Symfony PHPUnit Bridge -->
+        <env name="SYMFONY_DEPRECATIONS_HELPER" value="disabled" />
+    </php>
+
+    <testsuites>
+        <testsuite name="Unit Tests">
+            <directory>tests/Unit</directory>
+        </testsuite>
+        <testsuite name="Functional Tests">
+            <directory>tests/Functional</directory>
+        </testsuite>
+    </testsuites>
+
+</phpunit>

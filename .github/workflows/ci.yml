@@ -1,0 +1,137 @@
+name: CI — PetCare
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  # ─────────────────────────────────────────────
+  # JOB 1 : Tests PHPUnit — unitaires + fonctionnels
+  # ─────────────────────────────────────────────
+  backend-tests:
+    name: "PHPUnit — PHP ${{ matrix.php }}"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.4"]
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP ${{ matrix.php }}
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_sqlite
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: backend/vendor
+          key: ${{ runner.os }}-php-${{ matrix.php }}-${{ hashFiles('backend/composer.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-php-${{ matrix.php }}-
+
+      - name: Prepare .env for CI
+        run: cp .env.test .env
+
+      - name: Install Composer dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --no-scripts
+
+      # ── Audit sécurité dépendances PHP (OWASP A06) ───────────────────────
+      - name: Composer security audit
+        run: composer audit --no-dev --format=plain
+
+      # ── Tests unitaires (pas de BDD, pas de JWT) ──────────────────────────
+      - name: Run PHPUnit — tests unitaires
+        run: vendor/bin/phpunit tests/Unit --colors=always --testdox --no-coverage
+
+      # ── Tests fonctionnels (SQLite + JWT) ────────────────────────────────
+      - name: Prepare var directory for SQLite
+        run: mkdir -p var
+
+      - name: Generate JWT keys for functional tests
+        run: |
+          mkdir -p config/jwt
+          openssl genrsa -passout pass:petcare_jwt_test -out config/jwt/private.pem 2048
+          openssl rsa -passin pass:petcare_jwt_test -in config/jwt/private.pem -pubout -out config/jwt/public.pem
+
+      - name: Run PHPUnit — tests fonctionnels
+        run: vendor/bin/phpunit tests/Functional --colors=always --testdox --no-coverage
+
+  # ─────────────────────────────────────────────
+  # JOB 2 : Lint PHP (syntaxe)
+  # ─────────────────────────────────────────────
+  backend-lint:
+    name: "PHP Lint (syntaxe)"
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+
+      - name: Check PHP syntax errors
+        run: find src -name "*.php" -print0 | xargs -0 -n1 php -l
+
+  # ─────────────────────────────────────────────
+  # JOB 3 : Build + Tests frontend (React + Vite)
+  # ─────────────────────────────────────────────
+  frontend-build:
+    name: "Frontend Build (Node ${{ matrix.node }})"
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node: ["20", "22"]
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install npm dependencies
+        run: npm install
+
+      # ── Audit sécurité dépendances Node (OWASP A06) ──────────────────────
+      - name: npm security audit
+        run: npm audit --audit-level=high --omit=dev
+
+      - name: Run Vitest (tests unitaires React)
+        run: npm test
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Check build output exists
+        run: test -d dist && echo "Build OK ✓" || (echo "Build FAILED ✗" && exit 1)

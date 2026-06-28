@@ -1,0 +1,105 @@
+
+# ================================================================
+# PetCare — Docker Compose
+# ================================================================
+# Services :
+#   - app      : PHP 8.2 + Symfony 7.4 (API REST)
+#   - nginx    : Reverse proxy (port 8000 → app:9000)
+#   - database : PostgreSQL 16 (BDD)
+#   - mailer   : Mailpit (SMTP de dev, interface web port 8025)
+#   - frontend : Node 20 + Vite (React dev server, port 5173)
+#
+# Démarrage : docker compose up -d
+# Arrêt     : docker compose down
+# ================================================================
+
+services:
+
+  # ── Application Symfony (PHP-FPM) ──────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    volumes:
+      - .:/app:rw,cached
+      - ./config/jwt:/app/config/jwt:ro
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      APP_SECRET: ${APP_SECRET:-petcare_dev_secret}
+      DATABASE_URL: postgresql://app:changeme@database:5432/petcare?serverVersion=16&charset=utf8
+      MAILER_DSN: ${MAILER_DSN:-smtp://mailer:1025}
+      CORS_ALLOW_ORIGIN: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$$'
+      JWT_SECRET_KEY: /app/config/jwt/private.pem
+      JWT_PUBLIC_KEY: /app/config/jwt/public.pem
+      JWT_PASSPHRASE: ${JWT_PASSPHRASE:-petcare_jwt_2026}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      MAILER_FROM_EMAIL: ${MAILER_FROM_EMAIL:-noreply@petcare.fr}
+      MAILER_FROM_NAME: ${MAILER_FROM_NAME:-PetCare}
+    depends_on:
+      database:
+        condition: service_healthy
+      mailer:
+        condition: service_started
+    restart: unless-stopped
+
+  # ── Nginx (reverse proxy) ───────────────────────────────────────
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "${PORT:-8000}:80"
+    volumes:
+      - .:/app:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+
+  # ── Base de données (PostgreSQL) ────────────────────────────────
+  database:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-petcare}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-changeme}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+    healthcheck:
+      test: ["CMD", "pg_isready", "-d", "${POSTGRES_DB:-petcare}", "-U", "${POSTGRES_USER:-app}"]
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    ports:
+      - "5432:5432"
+    volumes:
+      - database_data:/var/lib/postgresql/data:rw
+    restart: unless-stopped
+
+  # ── Mailpit (serveur SMTP de dev) ───────────────────────────────
+  mailer:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Interface web (http://localhost:8025)
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    restart: unless-stopped
+
+  # ── Frontend React (dev server Vite) ───────────────────────────
+  # Pour le développement local : utiliser ce service (hot-reload Vite)
+  # Pour la production         : utiliser docker-compose.yml à la racine
+  frontend:
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ../frontend:/app:rw,cached
+    environment:
+      VITE_API_URL: http://localhost:8000/api
+    depends_on:
+      - nginx
+    restart: unless-stopped
+
+volumes:
+  database_data:
